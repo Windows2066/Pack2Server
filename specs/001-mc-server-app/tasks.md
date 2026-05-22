@@ -169,8 +169,8 @@
 
 **目的**: 完成部署、文档、可访问性、性能和安全收尾。
 
-- [ ] T072 [P] 更新本地运行文档 `README.md`
-- [ ] T073 [P] 将 quickstart 中的命令同步到 `README.md` 和 `.env.example`
+- [x] T072 [P] 更新本地运行文档 `README.md`
+- [x] T073 [P] 将 quickstart 中的命令同步到 `README.md` 和 `.env.example`
 - [ ] T074 验证 Docker Compose 启动前端、后端、worker、Redis `deploy/docker-compose.yml`
 - [ ] T075 验证所有用户可见前端文案和后端错误信息均为简体中文 `frontend/src/`、`backend/app/`
 - [ ] T076 验证未找到官方服务端时结果页列出 CurseForge、Modrinth、FTB `frontend/src/components/search/OfficialServerCandidates.tsx`
