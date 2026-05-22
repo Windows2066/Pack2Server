@@ -1,6 +1,7 @@
+import hashlib
 import zipfile
 
-from app.services.archive_analyzer import ArchiveAnalysis
+from app.services.archive_analyzer import ArchiveAnalysis, RemoteModFile
 from app.services.server_generator import build_runnable_server_artifact
 
 
@@ -37,4 +38,59 @@ def test_build_runnable_server_artifact_creates_scripts_mods_and_archive(tmp_pat
     assert "start.sh" in names
     assert "start.bat" in names
     assert "mods/server-lib.jar" in names
+    assert "_disabled_client_mods/journeymap-client.jar" in names
+
+
+def test_build_runnable_server_artifact_downloads_modrinth_remote_mods(tmp_path):
+    upload_archive = tmp_path / "pack.mrpack"
+    with zipfile.ZipFile(upload_archive, "w") as archive:
+        archive.writestr("modrinth.index.json", "{}")
+
+    server_bytes = b"server remote mod"
+    client_bytes = b"client remote mod"
+
+    def fetcher(remote_file: RemoteModFile) -> bytes:
+        return {
+            "mods/remote-lib.jar": server_bytes,
+            "mods/journeymap-client.jar": client_bytes,
+        }[remote_file.path]
+
+    artifact = build_runnable_server_artifact(
+        task_id="task-remote",
+        upload_archive=upload_archive,
+        workspace_root=tmp_path / "workspaces",
+        artifact_root=tmp_path / "artifacts",
+        analysis=ArchiveAnalysis(
+            pack_name="remote pack",
+            pack_version="1.0.0",
+            minecraft_version="1.20.1",
+            loader="fabric",
+            mod_files=[],
+            remote_mod_files=[
+                RemoteModFile(
+                    path="mods/remote-lib.jar",
+                    downloads=["https://example.test/remote-lib.jar"],
+                    hashes={"sha1": hashlib.sha1(server_bytes).hexdigest()},
+                ),
+                RemoteModFile(
+                    path="mods/journeymap-client.jar",
+                    downloads=["https://example.test/journeymap-client.jar"],
+                    hashes={"sha1": hashlib.sha1(client_bytes).hexdigest()},
+                ),
+            ],
+        ),
+        remote_fetcher=fetcher,
+    )
+
+    assert (artifact.workspace_path / "mods" / "remote-lib.jar").read_bytes() == server_bytes
+    assert (
+        artifact.workspace_path / "_disabled_client_mods" / "journeymap-client.jar"
+    ).read_bytes() == client_bytes
+    assert artifact.kept_mods == 1
+    assert artifact.disabled_mods == 1
+
+    with zipfile.ZipFile(artifact.archive_path) as archive:
+        names = set(archive.namelist())
+
+    assert "mods/remote-lib.jar" in names
     assert "_disabled_client_mods/journeymap-client.jar" in names

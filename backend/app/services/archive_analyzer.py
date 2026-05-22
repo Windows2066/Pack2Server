@@ -1,11 +1,18 @@
 import json
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
 class ArchiveSecurityError(ValueError):
     pass
+
+
+@dataclass(frozen=True)
+class RemoteModFile:
+    path: str
+    downloads: list[str] = field(default_factory=list)
+    hashes: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -15,6 +22,7 @@ class ArchiveAnalysis:
     minecraft_version: str | None
     loader: str | None
     mod_files: list[str]
+    remote_mod_files: list[RemoteModFile] = field(default_factory=list)
 
 
 def _assert_safe_zip(archive: zipfile.ZipFile) -> None:
@@ -46,6 +54,7 @@ def analyze_archive(path: Path) -> ArchiveAnalysis:
                 minecraft_version=dependencies.get("minecraft"),
                 loader=_loader_from_dependencies(dependencies),
                 mod_files=mod_files,
+                remote_mod_files=_remote_mod_files_from_modrinth(data),
             )
 
         if "manifest.json" in names:
@@ -63,3 +72,28 @@ def analyze_archive(path: Path) -> ArchiveAnalysis:
             )
 
         return ArchiveAnalysis(None, None, None, None, mod_files)
+
+
+def _remote_mod_files_from_modrinth(data: dict) -> list[RemoteModFile]:
+    remote_files: list[RemoteModFile] = []
+    for item in data.get("files", []):
+        if not isinstance(item, dict):
+            continue
+
+        path = item.get("path")
+        if not isinstance(path, str) or not path.lower().endswith(".jar"):
+            continue
+
+        downloads = item.get("downloads", [])
+        if not isinstance(downloads, list):
+            downloads = []
+        downloads = [url for url in downloads if isinstance(url, str)]
+
+        hashes = item.get("hashes", {})
+        if not isinstance(hashes, dict):
+            hashes = {}
+        hashes = {str(key): str(value) for key, value in hashes.items()}
+
+        remote_files.append(RemoteModFile(path=path, downloads=downloads, hashes=hashes))
+
+    return remote_files

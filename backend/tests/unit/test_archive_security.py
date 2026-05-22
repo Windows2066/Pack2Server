@@ -1,4 +1,5 @@
 import io
+import json
 import zipfile
 
 import pytest
@@ -43,3 +44,39 @@ def test_reads_modrinth_index(tmp_path):
     assert result.pack_name == "测试包"
     assert result.minecraft_version == "1.20.1"
     assert result.loader == "forge"
+
+
+def test_reads_modrinth_remote_mod_files(tmp_path):
+    archive_path = tmp_path / "pack.mrpack"
+    archive_path.write_bytes(
+        _zip_bytes(
+            {
+                "modrinth.index.json": json.dumps(
+                    {
+                        "name": "remote pack",
+                        "versionId": "1.0.0",
+                        "dependencies": {"minecraft": "1.20.1", "fabric-loader": "0.15.0"},
+                        "files": [
+                            {
+                                "path": "mods/remote-lib.jar",
+                                "downloads": ["https://example.test/remote-lib.jar"],
+                                "hashes": {"sha1": "abc123"},
+                            },
+                            {
+                                "path": "resourcepacks/not-a-mod.zip",
+                                "downloads": ["https://example.test/not-a-mod.zip"],
+                            },
+                        ],
+                    }
+                )
+            }
+        )
+    )
+
+    result = analyze_archive(archive_path)
+
+    assert len(result.remote_mod_files) == 1
+    remote_file = result.remote_mod_files[0]
+    assert remote_file.path == "mods/remote-lib.jar"
+    assert remote_file.downloads == ["https://example.test/remote-lib.jar"]
+    assert remote_file.hashes == {"sha1": "abc123"}

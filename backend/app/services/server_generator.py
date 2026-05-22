@@ -1,9 +1,13 @@
+import hashlib
 import shutil
 import zipfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+from typing import Callable
 
-from app.services.archive_analyzer import ArchiveAnalysis, ArchiveSecurityError
+import httpx
+
+from app.services.archive_analyzer import ArchiveAnalysis, ArchiveSecurityError, RemoteModFile
 from app.services.mod_decider import decide_mod_side
 from app.services.verification_runner import VerificationResult
 
@@ -25,6 +29,10 @@ class GeneratedServerArtifact:
     disabled_mods: int
 
 
+class RemoteModDownloadError(RuntimeError):
+    pass
+
+
 def create_server_workspace(workspace: Path, mod_files: list[Path]) -> Path:
     mods_dir = workspace / "mods"
     disabled_dir = workspace / "_disabled_client_mods"
@@ -43,6 +51,7 @@ def build_runnable_server_artifact(
     workspace_root: Path,
     artifact_root: Path,
     analysis: ArchiveAnalysis,
+    remote_fetcher: Callable[[RemoteModFile], bytes] | None = None,
 ) -> GeneratedServerArtifact:
     workspace_path = workspace_root / task_id
     archive_path = artifact_root / f"{task_id}-server.zip"
@@ -54,6 +63,7 @@ def build_runnable_server_artifact(
 
     kept_mods = 0
     disabled_mods = 0
+    copied_mod_names: set[str] = set()
 
     with zipfile.ZipFile(upload_archive) as archive:
         _assert_safe_archive(archive)
@@ -75,6 +85,7 @@ def build_runnable_server_artifact(
                 )
                 target = target_dir / normalized.name
                 _extract_member(archive, member, target)
+                copied_mod_names.add(normalized.name)
                 if decision == "disable_client_only":
                     disabled_mods += 1
                 else:
@@ -83,6 +94,32 @@ def build_runnable_server_artifact(
 
             if normalized.parts and normalized.parts[0].lower() in COPYABLE_DIRECTORIES:
                 _extract_member(archive, member, workspace_path / Path(*normalized.parts))
+
+    fetch_remote = remote_fetcher or _fetch_remote_mod_file
+    for remote_file in analysis.remote_mod_files:
+        remote_path = PurePosixPath(remote_file.path)
+        _assert_safe_remote_mod_path(remote_path)
+        if remote_path.name in copied_mod_names:
+            continue
+
+        content = fetch_remote(remote_file)
+        _verify_remote_mod_hash(remote_file, content)
+
+        decision, _, _ = decide_mod_side(remote_path.name)
+        target_dir = (
+            workspace_path / "_disabled_client_mods"
+            if decision == "disable_client_only"
+            else workspace_path / "mods"
+        )
+        target = target_dir / remote_path.name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+        copied_mod_names.add(remote_path.name)
+
+        if decision == "disable_client_only":
+            disabled_mods += 1
+        else:
+            kept_mods += 1
 
     _write_runtime_files(workspace_path, analysis, kept_mods, disabled_mods)
     _zip_workspace(workspace_path, archive_path)
@@ -145,6 +182,41 @@ def _is_mod_jar(path: PurePosixPath) -> bool:
         and path.parts[0].lower() == "mods"
         and path.name.lower().endswith(".jar")
     )
+
+
+def _assert_safe_remote_mod_path(path: PurePosixPath) -> None:
+    if path.is_absolute() or ".." in path.parts or not _is_mod_jar(path):
+        raise ArchiveSecurityError("整合包 manifest 包含不安全或不支持的远程 mod 路径")
+
+
+def _fetch_remote_mod_file(remote_file: RemoteModFile) -> bytes:
+    if not remote_file.downloads:
+        raise RemoteModDownloadError(f"{remote_file.path} 缺少下载地址")
+
+    errors: list[str] = []
+    for url in remote_file.downloads:
+        try:
+            response = httpx.get(url, follow_redirects=True, timeout=60.0)
+            response.raise_for_status()
+            return response.content
+        except httpx.HTTPError as exc:
+            errors.append(f"{url}: {exc}")
+
+    detail = "；".join(errors) if errors else "无可用下载地址"
+    raise RemoteModDownloadError(f"无法下载 {remote_file.path}：{detail}")
+
+
+def _verify_remote_mod_hash(remote_file: RemoteModFile, content: bytes) -> None:
+    for algorithm in ["sha512", "sha256", "sha1"]:
+        expected = remote_file.hashes.get(algorithm)
+        if not expected:
+            continue
+        actual = hashlib.new(algorithm, content).hexdigest()
+        if actual.lower() != expected.lower():
+            raise RemoteModDownloadError(
+                f"{remote_file.path} 下载后 {algorithm} 校验失败"
+            )
+        return
 
 
 def _extract_member(archive: zipfile.ZipFile, member: zipfile.ZipInfo, target: Path) -> None:
