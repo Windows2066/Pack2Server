@@ -1,15 +1,17 @@
 import asyncio
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from app.api.routes_tasks import TASKS
-from app.schemas.task import TaskDetail, TaskEventRead
+from app.api.routes_tasks import ARTIFACT_PATHS, TASKS
+from app.core.config import get_settings
+from app.core.paths import data_root
+from app.schemas.task import ArtifactRead, TaskDetail, TaskEventRead
 from app.services.archive_analyzer import analyze_archive
-from app.services.mod_decider import decide_mod_side
 from app.services.query_parser import parse_pack_query
 from app.services.official_server_search import search_official_servers
 from app.services.report_builder import build_failure_report, build_success_report
+from app.services.server_generator import build_runnable_server_artifact
 
 
 def _add_event(task: TaskDetail, stage: str, message: str, level: str = "info") -> None:
@@ -33,28 +35,51 @@ def run_upload_generate_task(task_id: str) -> str:
             raise ValueError("任务缺少上传文件路径")
 
         analysis = analyze_archive(Path(task.input_summary))
-        decisions = [decide_mod_side(mod_file) for mod_file in analysis.mod_files]
-        disabled_mods = sum(1 for decision, _, _ in decisions if decision == "disable_client_only")
-        kept_mods = len(decisions) - disabled_mods
+        task.stage = "server_generation"
+        task.progress_message = "正在生成本地服务端目录"
+        _add_event(task, task.stage, "开始复制服务端文件并隔离客户端专用 mod")
+
+        generated = build_runnable_server_artifact(
+            task_id=task_id,
+            upload_archive=Path(task.input_summary),
+            workspace_root=data_root() / "workspaces",
+            artifact_root=data_root() / "artifacts",
+            analysis=analysis,
+        )
+        artifact_id = "server-archive"
+        artifact_name = f"{task_id}-server.zip"
+        artifact_relative_path = generated.archive_path.resolve().relative_to(
+            (data_root() / "artifacts").resolve()
+        )
+        ARTIFACT_PATHS[f"{task_id}:{artifact_id}"] = artifact_relative_path.as_posix()
 
         report = build_success_report(
             pack_name=analysis.pack_name or "未识别整合包",
             minecraft_version=analysis.minecraft_version,
             loader=analysis.loader,
-            kept_mods=kept_mods,
-            disabled_mods=disabled_mods,
+            kept_mods=generated.kept_mods,
+            disabled_mods=generated.disabled_mods,
         )
         task.status = "succeeded"
         task.stage = "completed"
-        task.progress_message = "服务端生成任务已完成基础分析"
+        task.progress_message = "服务端生成完成，可以下载产物"
         task.pack_identity = {
             "pack_name": analysis.pack_name,
             "pack_version": analysis.pack_version,
             "minecraft_version": analysis.minecraft_version,
             "loader": analysis.loader,
         }
+        task.artifacts = [
+            ArtifactRead(
+                id=artifact_id,
+                kind="server_archive",
+                download_name=artifact_name,
+                expires_at=datetime.now(UTC)
+                + timedelta(hours=get_settings().artifact_retention_hours),
+            )
+        ]
         task.report = report
-        _add_event(task, task.stage, "已生成基础分析报告")
+        _add_event(task, task.stage, "已生成可下载服务端压缩包")
         return report
     except Exception as exc:
         task.status = "failed"

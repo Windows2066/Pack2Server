@@ -1,11 +1,14 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 
 from app.schemas.task import TaskDetail, TaskStatus, TaskSummary
+from app.services.artifact_access import resolve_artifact_path
 from app.services.cleanup import is_expired
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
 TASKS: dict[str, TaskDetail] = {}
+ARTIFACT_PATHS: dict[str, str] = {}
 
 
 def _summary_status(task: TaskDetail) -> TaskStatus:
@@ -57,4 +60,28 @@ def get_task_events(task_id: str):
 
 @router.get("/{task_id}/artifacts/{artifact_id}/download")
 def download_artifact(task_id: str, artifact_id: str):
-    raise HTTPException(status_code=404, detail="产物不存在或已过期")
+    task = TASKS.get(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="产物不存在或已过期")
+
+    artifact = next((item for item in task.artifacts if item.id == artifact_id), None)
+    if not artifact or is_expired(artifact.expires_at):
+        raise HTTPException(status_code=404, detail="产物不存在或已过期")
+
+    relative_path = ARTIFACT_PATHS.get(f"{task_id}:{artifact_id}")
+    if not relative_path:
+        raise HTTPException(status_code=404, detail="产物不存在或已过期")
+
+    try:
+        artifact_path = resolve_artifact_path(relative_path)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail="产物不存在或已过期") from exc
+
+    if not artifact_path.is_file():
+        raise HTTPException(status_code=404, detail="产物不存在或已过期")
+
+    return FileResponse(
+        artifact_path,
+        media_type="application/zip",
+        filename=artifact.download_name,
+    )

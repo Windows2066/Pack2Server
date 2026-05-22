@@ -13,6 +13,8 @@ def _mrpack_bytes() -> bytes:
             "modrinth.index.json",
             '{"name":"测试包","versionId":"1.0.0","dependencies":{"minecraft":"1.20.1","fabric-loader":"0.15.0"},"files":[]}',
         )
+        archive.writestr("mods/server-lib.jar", "server")
+        archive.writestr("mods/journeymap-client.jar", "client")
     return buffer.getvalue()
 
 
@@ -36,3 +38,16 @@ def test_upload_creates_generation_task():
     assert detail_body["stage"] == "completed"
     assert detail_body["pack_identity"]["minecraft_version"] == "1.20.1"
     assert "服务端生成完成" in detail_body["report"]
+    assert detail_body["artifacts"]
+
+    artifact = detail_body["artifacts"][0]
+    download = client.get(f"/api/tasks/{body['task_id']}/artifacts/{artifact['id']}/download")
+    assert download.status_code == 200
+
+    with zipfile.ZipFile(io.BytesIO(download.content)) as archive:
+        names = set(archive.namelist())
+
+    assert "start.sh" in names
+    assert "start.bat" in names
+    assert "mods/server-lib.jar" in names
+    assert "_disabled_client_mods/journeymap-client.jar" in names

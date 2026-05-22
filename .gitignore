@@ -21,6 +21,7 @@ coverage/
 .env.*
 !/.env.example
 backend/data/**
+data/*.db
 data/uploads/**
 data/workspaces/**
 data/artifacts/**
