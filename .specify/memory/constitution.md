@@ -1,50 +1,127 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+同步影响报告
+版本变更：1.0.0 -> 1.1.0
+修改原则：
+- I. 官方服务端优先：翻译为中文，语义不变
+- II. 快速且有引导的用户流程：翻译为中文，语义不变
+- III. 基于证据的来源解析：翻译为中文，语义不变
+- IV. 安全生成与运行验证：翻译为中文，语义不变
+- V. 可复用知识与透明边界：翻译为中文，语义不变
+新增原则：
+- VI. 中文优先且默认唯一
+新增章节：
+- 无
+移除章节：
+- 无
+需要同步的模板：
+- .specify/templates/plan-template.md：已更新
+- .specify/templates/spec-template.md：已更新
+- .specify/templates/tasks-template.md：已更新
+- .specify/templates/commands/*.md：不存在
+- AGENTS.md：已更新
+后续 TODO：无
+-->
 
-## Core Principles
+# Minecraft 服务端整合包生成器宪法
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+## 核心原则
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### I. 官方服务端优先
+每个功能都必须在生成服务端之前，优先查找已经存在的官方服务端包。
+当输入中包含足够元数据可以识别整合包时，检索顺序必须覆盖
+CurseForge、Modrinth 和 FTB。如果没有找到匹配的服务端包，系统必须
+明确告诉用户：在已检测到的来源和版本下未找到对应服务端，而不是伪装
+成存在可下载结果。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+理由：下载维护者提供的服务端包通常比从客户端包重建更快、更安全，
+也更符合用户“尽快能玩”的目标。
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. 快速且有引导的用户流程
+主流程必须能从一个用户输入开始：整合包 URL、manifest、本地压缩包或
+本地文件夹。每个功能都必须尽量减少必填选项，提供合理默认值，并用
+用户能理解的语言展示进度。除非继续执行会导致错误服务端，否则工具
+不得因为专家级细节阻塞用户。
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+理由：本项目是为了节省 Minecraft 玩家搭服时间，而不是让用户学习
+mod loader 的内部细节。
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### III. 基于证据的来源解析
+关于整合包身份、loader、Minecraft 版本、已有服务端可用性、mod 端侧
+分类的每个决策，都必须有记录下来的证据支撑。可接受证据包括平台元数据、
+官方服务端文件 manifest、整合包 manifest、mod jar 元数据、人工维护规则、
+以及经过验证的运行日志。当证据冲突或缺失时，面向用户的结果必须标记为
+不确定，并推荐下一步安全操作。
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+理由：Minecraft mod 生态变化很快；可复现证据能让自动化结果可信、
+可调试。
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### IV. 安全生成与运行验证
+生成服务端时，必须保留原始客户端整合包，将移除的客户端专用 mod 移入
+隔离的禁用区域，并产出包含启动脚本和清晰说明的可运行服务端目录。生成
+服务端只有在 dedicated server 启动测试达到预期 ready 状态后，才算完成；
+否则必须返回包含关键日志证据的简洁失败报告。
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+理由：用户需要的是能直接运行的结果；可逆操作能降低端侧识别误判的损害。
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+### V. 可复用知识与透明边界
+重复出现的来源查询、mod 端侧判断、崩溃日志诊断、官方服务端对比结果，
+在可行时都应该沉淀到本地可复用知识库。工具必须向用户展示缓存时效、
+来源限制和不支持的情况。工具不得在“未找到官方服务端”之后静默转入
+“生成服务端”，必须明确告知这个路径切换。
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+理由：项目应该越用越快、越用越准，但不能牺牲对不确定性的诚实表达。
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+### VI. 中文优先且默认唯一
+除非用户在单次请求中明确要求其他语言，助手回答、项目文档、spec、plan、
+tasks、README、错误说明、进度提示、用户可见 CLI 文案和报告都必须使用
+简体中文。代码标识符、命令、路径、协议字段、第三方平台名称、日志原文
+可以保留原语言；解释这些内容时必须使用中文。
+
+理由：项目面向中文使用和维护场景。统一语言能降低理解成本，也能避免
+同一套工作流中出现中英文混杂导致的信息损耗。
+
+## 来源与交付约束
+
+支持的来源平台是 CurseForge、Modrinth 和 FTB。实现必须把平台限流、API
+不可用、元数据缺失、文件重命名视为正常结果，并给出清晰中文提示。功能
+可以使用 MC 百科或其他 wiki 证据辅助判断 mod 端侧需求，但 wiki 证据只
+能作为建议，除非被平台元数据、jar 元数据或运行验证确认。
+
+项目的一等输出只有两类：
+
+1. 直接获得官方服务端包下载结果。
+2. 生成本地服务端目录，包含脚本、配置、被隔离的客户端专用 mod，以及
+   验证报告。
+
+本项目用于个人使用。除非先修订本宪法，否则不得引入商业分发流程、账号
+系统、计费系统或公开二次分发 mod 的假设。
+
+## 开发工作流与质量门禁
+
+每份 specification 都必须包含用户便利性和速度相关的成功标准。每份 plan
+都必须在实现前定义来源检索路径、生成兜底路径、失败提示和验证方式。每份
+tasks 都必须把“查找官方服务端”和“生成服务端”保持为可独立交付的工作，
+这样最快路径可以先交付。
+
+涉及来源检索、文件下载、端侧分类、服务端目录生成或启动验证的改动，必须
+包含测试或可重复执行的 fixture 运行。需要访问外部平台的功能必须支持
+fixture 或缓存驱动的测试模式，避免开发完全依赖实时网络。
+
+所有 spec、plan、tasks、checklist、quickstart 和用户可见文档必须使用
+简体中文编写；只有技术标识符、命令、路径、字段名、第三方专有名词和日志
+原文可以保留英文。
+
+## 治理
+
+本宪法优先于冲突的模板、spec、plan 和临时实现习惯。修订宪法时，必须更新
+本文件，在同步影响报告中记录版本变化，并把变化传播到 Spec Kit 模板。每次
+编写 specification、planning、task generation，以及标记功能完成前，都必须
+检查是否符合本宪法。
+
+版本号遵循语义化版本：
+
+- MAJOR：移除原则，或以改变项目方向的方式重定义原则。
+- MINOR：新增原则或治理章节，或实质性扩展已有要求。
+- PATCH：不改变行为要求的措辞澄清。
+
+**版本**: 1.1.0 | **批准日期**: 2026-05-21 | **最后修订**: 2026-05-21

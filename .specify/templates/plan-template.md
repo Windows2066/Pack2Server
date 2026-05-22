@@ -1,5 +1,8 @@
 # Implementation Plan: [FEATURE]
 
+> 本模板生成的所有正文、说明、用户可见提示和验收描述必须使用简体中文。
+> 代码标识符、命令、路径、第三方名称、协议字段和日志原文可以保留原语言。
+
 **Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
 
 **Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
@@ -36,11 +39,22 @@
 
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
-## Constitution Check
+## 宪法检查
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+*门禁：Phase 0 research 前必须通过；Phase 1 design 后必须重新检查。*
 
-[Gates determined based on constitution file]
+- **官方服务端优先**：plan 必须说明如何在 CurseForge、Modrinth、FTB
+  检索已有服务端包，以及没有匹配服务端时展示的准确中文提示。
+- **快速且有引导的用户流程**：plan 必须定义主流程的最少用户输入、
+  默认选择、进度反馈和速度目标。
+- **基于证据的来源解析**：plan 必须列出用于证明整合包身份、loader/版本、
+  服务端可用性和 mod 端侧决策的元数据、manifest、jar 元数据、规则或日志。
+- **安全生成与运行验证**：plan 必须保留原始客户端文件，隔离移除的客户端
+  专用 mod，定义生成服务端目录结构，并说明 dedicated server 启动验证方式。
+- **可复用知识与透明边界**：plan 必须说明缓存/fixture 使用方式、知识库更新、
+  不支持的情况，以及如何向用户展示来源限制。
+- **中文统一**：plan、research、data-model、quickstart、contracts 中的说明、
+  验收、错误提示和用户可见文案必须使用简体中文。
 
 ## Project Structure
 

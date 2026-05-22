@@ -1,0 +1,257 @@
+openapi: 3.1.0
+info:
+  title: Minecraft 服务端整合包制作应用 API
+  version: 0.1.0
+  description: |
+    面向前端的 REST API。所有用户可见错误、进度和报告摘要必须使用简体中文。
+servers:
+  - url: http://localhost:8000
+paths:
+  /health:
+    get:
+      summary: 健康检查
+      responses:
+        "200":
+          description: 服务可用
+  /api/tasks:
+    get:
+      summary: 查看近期任务
+      responses:
+        "200":
+          description: 近期任务列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskSummary"
+  /api/tasks/{taskId}:
+    get:
+      summary: 查看任务详情
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 任务详情
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskDetail"
+        "404":
+          description: 任务不存在
+  /api/tasks/{taskId}/events:
+    get:
+      summary: 查看任务进度事件
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 任务进度事件列表
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TaskEvent"
+  /api/uploads:
+    post:
+      summary: 上传整合包并创建生成任务
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "202":
+          description: 任务已创建
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskCreated"
+        "400":
+          description: 上传文件无效
+  /api/search/official-server:
+    post:
+      summary: 根据自然语言查找官方服务端
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  minLength: 1
+                  description: 用户自然语言描述
+      responses:
+        "202":
+          description: 检索任务已创建
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskCreated"
+        "400":
+          description: 输入无效
+  /api/tasks/{taskId}/artifacts/{artifactId}/download:
+    get:
+      summary: 下载任务产物
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: artifactId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 产物文件
+        "404":
+          description: 产物不存在或已过期
+components:
+  schemas:
+    TaskCreated:
+      type: object
+      required: [task_id, status, message]
+      properties:
+        task_id:
+          type: string
+        status:
+          type: string
+          enum: [queued]
+        message:
+          type: string
+    TaskSummary:
+      type: object
+      required: [id, type, status, progress_message, created_at]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [upload_generate, official_search]
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        progress_message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    TaskDetail:
+      type: object
+      required: [id, type, status, stage, progress_message, events, artifacts]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [upload_generate, official_search]
+        status:
+          $ref: "#/components/schemas/TaskStatus"
+        stage:
+          type: string
+        progress_message:
+          type: string
+        pack_identity:
+          $ref: "#/components/schemas/PackIdentity"
+        official_candidates:
+          type: array
+          items:
+            $ref: "#/components/schemas/OfficialServerCandidate"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/TaskEvent"
+        artifacts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Artifact"
+        error_message:
+          type: string
+    TaskStatus:
+      type: string
+      enum: [queued, running, waiting_user_choice, succeeded, failed, expired]
+    TaskEvent:
+      type: object
+      required: [stage, level, message, created_at]
+      properties:
+        stage:
+          type: string
+        level:
+          type: string
+          enum: [info, warning, error]
+        message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    PackIdentity:
+      type: object
+      properties:
+        source:
+          type: string
+        pack_name:
+          type: string
+        pack_version:
+          type: string
+        minecraft_version:
+          type: string
+        loader:
+          type: string
+        confidence:
+          type: number
+    OfficialServerCandidate:
+      type: object
+      required: [source, pack_name, match_reason, confidence]
+      properties:
+        source:
+          type: string
+        pack_name:
+          type: string
+        pack_version:
+          type: string
+        minecraft_version:
+          type: string
+        loader:
+          type: string
+        download_url:
+          type: string
+        match_reason:
+          type: string
+        confidence:
+          type: number
+    Artifact:
+      type: object
+      required: [id, kind, download_name, expires_at]
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum: [server_archive, report, log_excerpt, disabled_mods_manifest]
+        download_name:
+          type: string
+        expires_at:
+          type: string
+          format: date-time

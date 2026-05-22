@@ -5,6 +5,10 @@ description: "Task list template for feature implementation"
 
 # Tasks: [FEATURE NAME]
 
+> 本模板生成的任务标题、任务说明、检查点、依赖关系和实施策略必须使用
+> 简体中文。代码标识符、命令、路径、第三方名称、协议字段和日志原文可以
+> 保留原语言。
+
 **Input**: Design documents from `/specs/[###-feature-name]/`
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
@@ -63,12 +67,12 @@ description: "Task list template for feature implementation"
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework
-- [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on
-- [ ] T008 Configure error handling and logging infrastructure
-- [ ] T009 Setup environment configuration management
+- [ ] T004 创建 CurseForge、Modrinth、FTB 的来源检索客户端或 fixture
+- [ ] T005 [P] 实现 URL、manifest、压缩包、文件夹输入的整合包元数据归一化
+- [ ] T006 [P] 创建检索结果、mod 端侧决策、运行日志的证据记录格式
+- [ ] T007 创建生成服务端目录结构和客户端专用 mod 隔离约定
+- [ ] T008 配置简洁的中文用户错误提示和进度反馈
+- [ ] T009 配置环境参数、缓存位置和 fixture 驱动测试模式
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -153,9 +157,11 @@ Examples of foundational tasks (adjust based on your project):
 
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
-- [ ] TXXX Performance optimization across all stories
+- [ ] TXXX 优化来源检索、缓存复用和生成速度
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
-- [ ] TXXX Security hardening
+- [ ] TXXX 验证“未找到官方服务端”的中文提示会列出已检索来源
+- [ ] TXXX 验证生成服务端会保留原始输入并隔离被移除的客户端专用 mod
+- [ ] TXXX 加固下载压缩包和文件系统解压流程
 - [ ] TXXX Run quickstart.md validation
 
 ---

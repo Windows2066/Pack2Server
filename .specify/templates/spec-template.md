@@ -1,5 +1,9 @@
 # Feature Specification: [FEATURE NAME]
 
+> 本模板生成的所有正文、用户故事、需求、验收场景、成功标准和假设必须使用
+> 简体中文。代码标识符、命令、路径、第三方名称、协议字段和日志原文可以
+> 保留原语言。
+
 **Feature Branch**: `[###-feature-name]`
 
 **Created**: [DATE]
@@ -108,6 +112,8 @@
 <!--
   ACTION REQUIRED: Define measurable success criteria.
   These must be technology-agnostic and measurable.
+  本项目必须包含用户便利性、快速反馈、中文提示和官方服务端检索结果清晰度
+  相关的成功标准。
 -->
 
 ### Measurable Outcomes
@@ -116,6 +122,19 @@
 - **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+
+### Minecraft 服务端整合包结果 *(本项目必填)*
+
+- **MC-SC-001**：用户可以从整合包 URL、manifest、压缩包或文件夹启动主流程；
+  除非检测结果不确定，否则不需要手动填写 Minecraft loader 内部细节。
+- **MC-SC-002**：当 CurseForge、Modrinth 或 FTB 上存在匹配整合包/版本的
+  官方服务端包时，系统必须先展示直接获取服务端的结果，再提供生成选项。
+- **MC-SC-003**：当已检索来源中没有找到官方服务端包时，系统必须明确说明
+  未找到匹配服务端，并列出已检索来源。
+- **MC-SC-004**：生成的服务端输出必须包含可运行启动脚本、保留的原始客户端
+  输入、被隔离的禁用客户端专用 mod，以及启动验证结果或简洁失败报告。
+- **MC-SC-005**：所有用户可见输出、错误说明、报告和文档必须使用简体中文，
+  仅技术标识符、命令、路径、第三方名称和日志原文可以保留原语言。
 
 ## Assumptions
 
