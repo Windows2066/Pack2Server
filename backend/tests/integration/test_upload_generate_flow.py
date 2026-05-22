@@ -38,6 +38,7 @@ def test_upload_creates_generation_task():
     assert detail_body["stage"] == "completed"
     assert detail_body["pack_identity"]["minecraft_version"] == "1.20.1"
     assert "服务端生成完成" in detail_body["report"]
+    assert "启动验证已跳过" in detail_body["report"]
     assert detail_body["artifacts"]
 
     artifact = detail_body["artifacts"][0]
@@ -49,5 +50,6 @@ def test_upload_creates_generation_task():
 
     assert "start.sh" in names
     assert "start.bat" in names
+    assert "VERIFICATION.md" in names
     assert "mods/server-lib.jar" in names
     assert "_disabled_client_mods/journeymap-client.jar" in names

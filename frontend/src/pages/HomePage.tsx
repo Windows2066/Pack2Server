@@ -3,12 +3,14 @@ import { createOfficialSearchTask, listTasks, TaskSummary, uploadPack } from '..
 import { GenerateServerForm } from '../components/upload/GenerateServerForm';
 import { OfficialServerSearchForm } from '../components/search/OfficialServerSearchForm';
 import { RecentTasks } from '../components/tasks/RecentTasks';
+import { TaskPage } from './TaskPage';
 
 export function HomePage() {
   const [mode, setMode] = useState<'upload' | 'search'>('upload');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tasks, setTasks] = useState<TaskSummary[]>([]);
+  const [activeTaskId, setActiveTaskId] = useState<string | undefined>();
 
   useEffect(() => {
     listTasks().then(setTasks).catch(() => setTasks([]));
@@ -19,6 +21,8 @@ export function HomePage() {
     try {
       const result = await uploadPack(file);
       setMessage(result.message);
+      setActiveTaskId(result.task_id);
+      listTasks().then(setTasks).catch(() => setTasks([]));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '提交失败');
     } finally {
@@ -31,6 +35,8 @@ export function HomePage() {
     try {
       const result = await createOfficialSearchTask(query);
       setMessage(result.message);
+      setActiveTaskId(result.task_id);
+      listTasks().then(setTasks).catch(() => setTasks([]));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '检索失败');
     } finally {
@@ -58,6 +64,7 @@ export function HomePage() {
           {mode === 'upload' ? <GenerateServerForm isSubmitting={isSubmitting} onSubmit={handleUpload} /> : <OfficialServerSearchForm isSubmitting={isSubmitting} onSubmit={handleSearch} />}
         </div>
         {message ? <p aria-live="polite" className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-900">{message}</p> : null}
+        {activeTaskId ? <TaskPage taskId={activeTaskId} /> : null}
       </section>
       <aside className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-950">近期任务</h2>

@@ -5,6 +5,7 @@ from pathlib import Path, PurePosixPath
 
 from app.services.archive_analyzer import ArchiveAnalysis, ArchiveSecurityError
 from app.services.mod_decider import decide_mod_side
+from app.services.verification_runner import VerificationResult
 
 
 COPYABLE_DIRECTORIES = {
@@ -92,6 +93,28 @@ def build_runnable_server_artifact(
         kept_mods=kept_mods,
         disabled_mods=disabled_mods,
     )
+
+
+def write_verification_report(workspace_path: Path, result: VerificationResult) -> Path:
+    report_path = workspace_path / "VERIFICATION.md"
+    lines = [
+        "# 启动验证报告",
+        "",
+        f"- 结果：{result.message}",
+        "",
+        "## 日志摘录",
+    ]
+    if result.log_excerpt:
+        lines.extend(f"- `{line}`" for line in result.log_excerpt)
+    else:
+        lines.append("- 无日志输出")
+    lines.append("")
+    report_path.write_text("\n".join(lines), encoding="utf-8")
+    return report_path
+
+
+def refresh_server_archive(artifact: GeneratedServerArtifact) -> None:
+    _zip_workspace(artifact.workspace_path, artifact.archive_path)
 
 
 def _assert_safe_archive(archive: zipfile.ZipFile) -> None:
