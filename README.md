@@ -63,9 +63,20 @@ ENABLE_STARTUP_VERIFICATION=false
 RUN_JOBS_INLINE=true
 USE_FIXTURES=true
 CURSEFORGE_API_KEY=
+DEEPSEEK_API_KEY=
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
 ```
 
-`RUN_JOBS_INLINE=true` 适合本地和当前 MVP；此模式下不需要先启动 Redis。后续任务状态完全落到 SQLite 后，可以切换为 RQ worker 异步执行。
+`RUN_JOBS_INLINE=true` 适合本地调试；此模式下不需要先启动 Redis。改为 `false` 后，API 只创建任务并写入 SQLite，
+实际执行交给 RQ worker。任务状态、事件、报告和产物元数据会持久化到 SQLite，后端重启后仍可查询。
+
+异步 worker 示例：
+
+```powershell
+cd backend
+rq worker default --url redis://localhost:6379/0
+```
 
 `ENABLE_STARTUP_VERIFICATION=false` 时会生成验证报告并明确标记“启动验证已跳过”。改为
 `true` 后，后端会在工作区执行 `java -Xms1G -Xmx2G -jar server.jar nogui`，捕获 ready
@@ -73,6 +84,9 @@ CURSEFORGE_API_KEY=
 
 `USE_FIXTURES=true` 会使用本地样例结果，适合开发和测试。要执行真实官方来源检索，将它改为
 `USE_FIXTURES=false`；CurseForge 真实检索还需要配置 `CURSEFORGE_API_KEY`。
+
+`DEEPSEEK_API_KEY` 用于复杂自然语言解析和候选整合包识别。未配置时会自动回退到本地规则解析。
+不要把真实 key 写入仓库；`.env`、`.env.*`、`*.env`、`*.key` 和 `secrets/` 已被 `.gitignore` 忽略。
 
 ## 开发验证
 
@@ -107,6 +121,6 @@ data/
 ## 当前限制
 
 - 官方来源客户端已接入真实检索路径：Modrinth 使用公开 API，CurseForge 需要 API key，FTB 使用官方 Server Files 页面提取安装器链接。开发测试仍默认保留 fixture 模式。
-- RQ 入口已经接入，但当前 MVP 默认内联执行；跨进程 worker 状态持久化需要后续接入 SQLite 任务仓库。
+- RQ 入口已经接入；默认仍可内联执行，改为 `RUN_JOBS_INLINE=false` 后可以使用 Redis + RQ worker 异步处理。
 - 服务端生成会产出可下载压缩包；loader/server jar 自动安装仍是后续增强项，当前需要用户按 `INSTALL.md` 放入匹配的 `server.jar` 后再执行真实启动验证。
 - Docker Compose 文件已保留在 `deploy/`，但服务器部署和镜像拉取问题放到二期处理。

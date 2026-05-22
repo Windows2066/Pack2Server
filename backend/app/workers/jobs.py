@@ -16,6 +16,7 @@ from app.services.server_generator import (
     refresh_server_archive,
     write_verification_report,
 )
+from app.services.task_repository import get_task_detail, save_task_detail
 from app.services.verification_runner import verify_startup
 
 
@@ -26,15 +27,17 @@ def _add_event(task: TaskDetail, stage: str, message: str, level: str = "info") 
 
 
 def run_upload_generate_task(task_id: str) -> str:
-    task = TASKS.get(task_id)
+    task = get_task_detail(task_id) or TASKS.get(task_id)
     if task is None:
         return build_failure_report("生成任务不存在", [task_id], "请重新上传整合包")
 
     try:
+        TASKS[task_id] = task
         task.status = "running"
         task.stage = "pack_analysis"
         task.progress_message = "正在分析整合包"
         _add_event(task, task.stage, "开始分析整合包清单文件")
+        save_task_detail(task)
 
         if not task.input_summary:
             raise ValueError("任务缺少上传文件路径")
@@ -43,6 +46,7 @@ def run_upload_generate_task(task_id: str) -> str:
         task.stage = "server_generation"
         task.progress_message = "正在生成本地服务端目录"
         _add_event(task, task.stage, "开始复制服务端文件并隔离客户端专用 mod")
+        save_task_detail(task)
 
         settings = get_settings()
         generated = build_runnable_server_artifact(
@@ -52,7 +56,7 @@ def run_upload_generate_task(task_id: str) -> str:
             artifact_root=data_root() / "artifacts",
             analysis=analysis,
         )
-        artifact_id = "server-archive"
+        artifact_id = f"{task_id}-server-archive"
         artifact_name = f"{task_id}-server.zip"
         artifact_relative_path = generated.archive_path.resolve().relative_to(
             (data_root() / "artifacts").resolve()
@@ -77,6 +81,7 @@ def run_upload_generate_task(task_id: str) -> str:
         task.stage = "startup_verification"
         task.progress_message = "正在执行启动验证"
         _add_event(task, task.stage, "开始执行 dedicated server 启动验证")
+        save_task_detail(task, artifact_paths={artifact_id: artifact_relative_path.as_posix()})
         verification = verify_startup(
             generated.workspace_path,
             enabled=settings.enable_startup_verification,
@@ -94,6 +99,7 @@ def run_upload_generate_task(task_id: str) -> str:
                 "请查看 VERIFICATION.md 和服务端日志，修正后重新生成或手动启动排查",
             )
             _add_event(task, task.stage, f"启动验证失败：{verification.message}", "error")
+            save_task_detail(task, artifact_paths={artifact_id: artifact_relative_path.as_posix()})
             return task.report
 
         report = build_success_report(
@@ -110,6 +116,7 @@ def run_upload_generate_task(task_id: str) -> str:
         task.progress_message = "服务端生成完成，可以下载产物"
         task.report = report
         _add_event(task, task.stage, "已生成可下载服务端压缩包")
+        save_task_detail(task, artifact_paths={artifact_id: artifact_relative_path.as_posix()})
         return report
     except Exception as exc:
         task.status = "failed"
@@ -117,20 +124,26 @@ def run_upload_generate_task(task_id: str) -> str:
         task.error_message = str(exc)
         task.report = build_failure_report("服务端生成失败", [str(exc)], "请检查整合包格式后重试")
         _add_event(task, task.stage, f"生成失败：{exc}", "error")
+        save_task_detail(task)
         return task.report
 
 
 def run_official_search_task(task_id: str) -> str:
-    task = TASKS.get(task_id)
+    task = get_task_detail(task_id) or TASKS.get(task_id)
     if task is None:
         return task_id
 
+    TASKS[task_id] = task
     task.status = "running"
     task.stage = "source_lookup"
     task.progress_message = "正在检索官方服务端"
     _add_event(task, task.stage, "开始检索 CurseForge、Modrinth 和 FTB")
+    save_task_detail(task)
 
     parsed = parse_pack_query(task.input_summary or "")
+    if task.pack_identity:
+        parsed.version_hint = task.pack_identity.get("version_hint")
+        parsed.source_hint = task.pack_identity.get("source_hint")
     results, searched = asyncio.run(search_official_servers(parsed))
     task.official_candidates = [asdict(result) for result in results]
     task.status = "succeeded"
@@ -142,6 +155,7 @@ def run_official_search_task(task_id: str) -> str:
         task.progress_message = "未找到官方服务端"
         task.report = f"已检索来源：{', '.join(searched)}；未找到官方服务端。"
     _add_event(task, task.stage, task.progress_message)
+    save_task_detail(task)
     return task_id
 
 

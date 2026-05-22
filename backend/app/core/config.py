@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     run_jobs_inline: bool = True
     use_fixtures: bool = True
     curseforge_api_key: str | None = None
+    deepseek_api_key: str | None = None
+    deepseek_base_url: str = "https://api.deepseek.com"
+    deepseek_model: str = "deepseek-v4-flash"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

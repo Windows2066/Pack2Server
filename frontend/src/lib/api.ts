@@ -76,6 +76,13 @@ export async function getTask(taskId: string): Promise<TaskDetail> {
   return parseJson<TaskDetail>(response);
 }
 
+export async function selectOfficialSearchCandidate(taskId: string, candidateIndex: number): Promise<TaskCreated> {
+  const response = await fetch(`${API_BASE}/api/search/official-server/${taskId}/candidates/${candidateIndex}`, {
+    method: 'POST'
+  });
+  return parseJson<TaskCreated>(response);
+}
+
 export function artifactDownloadUrl(taskId: string, artifactId: string): string {
   return `${API_BASE}/api/tasks/${taskId}/artifacts/${artifactId}/download`;
 }

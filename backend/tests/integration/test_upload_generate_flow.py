@@ -3,6 +3,7 @@ import zipfile
 
 from fastapi.testclient import TestClient
 
+from app.api.routes_tasks import TASKS
 from app.main import app
 
 
@@ -53,3 +54,8 @@ def test_upload_creates_generation_task():
     assert "VERIFICATION.md" in names
     assert "mods/server-lib.jar" in names
     assert "_disabled_client_mods/journeymap-client.jar" in names
+
+    TASKS.clear()
+    persisted_detail = client.get(f"/api/tasks/{body['task_id']}")
+    assert persisted_detail.status_code == 200
+    assert persisted_detail.json()["status"] == "succeeded"

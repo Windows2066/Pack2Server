@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse
 from app.schemas.task import TaskDetail, TaskStatus, TaskSummary
 from app.services.artifact_access import resolve_artifact_path
 from app.services.cleanup import is_expired
+from app.services.task_repository import get_artifact_path, get_task_detail, list_task_details
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
@@ -28,7 +29,9 @@ def _summary_message(task: TaskDetail, status: TaskStatus) -> str:
 @router.get("", response_model=list[TaskSummary])
 def list_tasks():
     summaries: list[TaskSummary] = []
-    for task in TASKS.values():
+    tasks = {task.id: task for task in list_task_details()}
+    tasks.update(TASKS)
+    for task in tasks.values():
         status = _summary_status(task)
         summaries.append(
             TaskSummary(
@@ -44,7 +47,7 @@ def list_tasks():
 
 @router.get("/{task_id}", response_model=TaskDetail)
 def get_task(task_id: str):
-    task = TASKS.get(task_id)
+    task = get_task_detail(task_id) or TASKS.get(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     return task
@@ -52,7 +55,7 @@ def get_task(task_id: str):
 
 @router.get("/{task_id}/events")
 def get_task_events(task_id: str):
-    task = TASKS.get(task_id)
+    task = get_task_detail(task_id) or TASKS.get(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     return task.events
@@ -60,7 +63,7 @@ def get_task_events(task_id: str):
 
 @router.get("/{task_id}/artifacts/{artifact_id}/download")
 def download_artifact(task_id: str, artifact_id: str):
-    task = TASKS.get(task_id)
+    task = get_task_detail(task_id) or TASKS.get(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="产物不存在或已过期")
 
@@ -68,7 +71,7 @@ def download_artifact(task_id: str, artifact_id: str):
     if not artifact or is_expired(artifact.expires_at):
         raise HTTPException(status_code=404, detail="产物不存在或已过期")
 
-    relative_path = ARTIFACT_PATHS.get(f"{task_id}:{artifact_id}")
+    relative_path = get_artifact_path(task_id, artifact_id) or ARTIFACT_PATHS.get(f"{task_id}:{artifact_id}")
     if not relative_path:
         raise HTTPException(status_code=404, detail="产物不存在或已过期")
 

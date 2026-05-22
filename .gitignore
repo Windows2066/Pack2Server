@@ -20,6 +20,9 @@ coverage/
 .env
 .env.*
 !/.env.example
+*.env
+*.key
+secrets/
 backend/data/**
 data/*.db
 data/uploads/**
