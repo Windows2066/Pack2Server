@@ -15,17 +15,27 @@
 - 后端：FastAPI + Pydantic + SQLAlchemy
 - 任务：RQ + Redis，当前 MVP 默认 `RUN_JOBS_INLINE=true` 以便本地直接可用
 - 存储：SQLite + 本地文件目录
-- 部署：Docker Compose
+- 部署：Docker Compose 作为二期服务器搭建内容，当前一期不作为验收门槛
 
 ## 本地启动
 
-使用 Docker Compose：
+后端：
 
 ```powershell
-docker compose -f deploy/docker-compose.yml up --build
+cd backend
+python -m pip install -e .[dev]
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-启动后访问：
+前端另开一个终端：
+
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev
+```
+
+启动后访问前端：
 
 ```text
 http://localhost:5173
@@ -45,7 +55,7 @@ http://localhost:8000
 APP_ENV=development
 DATA_DIR=./data
 DATABASE_URL=sqlite:///./data/app.db
-REDIS_URL=redis://redis:6379/0
+REDIS_URL=redis://localhost:6379/0
 MAX_UPLOAD_BYTES=2147483648
 ARTIFACT_RETENTION_HOURS=72
 ENABLE_STARTUP_VERIFICATION=false
@@ -54,7 +64,7 @@ USE_FIXTURES=true
 CURSEFORGE_API_KEY=
 ```
 
-`RUN_JOBS_INLINE=true` 适合本地和当前 MVP；后续任务状态完全落到 SQLite 后，可以切换为 RQ worker 异步执行。
+`RUN_JOBS_INLINE=true` 适合本地和当前 MVP；此模式下不需要先启动 Redis。后续任务状态完全落到 SQLite 后，可以切换为 RQ worker 异步执行。
 
 ## 开发验证
 
@@ -91,3 +101,4 @@ data/
 - 官方来源客户端仍是 fixture/占位级实现，真实 API 细节需要继续补齐。
 - RQ 入口已经接入，但当前 MVP 默认内联执行；跨进程 worker 状态持久化需要后续接入 SQLite 任务仓库。
 - 服务端生成目前完成基础整合包分析和报告，还未生成完整可运行服务端压缩包。
+- Docker Compose 文件已保留在 `deploy/`，但服务器部署和镜像拉取问题放到二期处理。

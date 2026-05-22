@@ -7,7 +7,7 @@
 
 **输入**: 来自 [specs/001-mc-server-app/spec.md](./spec.md) 的功能规格；用户指定技术栈：
 React + Vite + TypeScript + ui-ux-pro-max、FastAPI + RQ + Redis、SQLite +
-本地文件存储、Docker Compose。
+本地文件存储。Docker Compose 保留为二期服务器部署内容。
 
 ## 摘要
 
@@ -16,10 +16,10 @@ React + Vite + TypeScript + ui-ux-pro-max、FastAPI + RQ + Redis、SQLite +
 系统先检索 CurseForge、Modrinth、FTB 是否存在官方服务端，存在则优先提供，
 不存在则明确说明“未找到官方服务端”并列出已检索来源。
 
-第一版采用单机 Docker Compose 部署：前端负责上传、自然语言输入、任务进度和结果页；
-FastAPI 提供 REST API；RQ worker 执行检索、解压、分析、生成和启动验证；Redis
-承载任务队列；SQLite 记录任务、证据和结果；本地 `data/` 目录保存上传、工作区、
-产物、报告和缓存。
+第一版采用本地运行优先：前端通过 Vite dev server 提供上传、自然语言输入、任务进度和结果页；
+FastAPI 提供 REST API；任务默认通过 `RUN_JOBS_INLINE=true` 在本地内联执行，避免一期依赖
+Redis 和 Docker；SQLite 记录任务、证据和结果；本地 `data/` 目录保存上传、工作区、产物、
+报告和缓存。Docker Compose、独立 Redis worker 和服务器长期运行配置放到二期。
 
 ## 技术上下文
 
@@ -34,8 +34,7 @@ Pydantic、SQLAlchemy、RQ、Redis、httpx、tomli/tomllib、python-multipart、
 **测试**: 前端使用 Vitest + React Testing Library；后端使用 pytest；API 合约以
 OpenAPI 文件和后端测试验证；任务处理使用 fixture 包和缓存响应测试。
 
-**目标平台**: Linux 服务器上的 Docker Compose；本地开发支持 Windows + Docker Desktop
-或 WSL2。
+**目标平台**: 一期目标为 Windows 本地开发环境；二期目标为 Linux 服务器上的 Docker Compose。
 
 **项目类型**: 前后端 Web 应用 + 后台 worker + 本地文件处理工具。
 
@@ -43,7 +42,7 @@ OpenAPI 文件和后端测试验证；任务处理使用 fixture 包和缓存响
 
 - 明确自然语言官方服务端检索在 30 秒内返回结果或失败原因。
 - 单机 MVP 同时运行 1 个上传生成任务和 1 个官方检索任务。
-- 任务状态查询接口响应时间在本机或单机部署下保持 500ms 内。
+- 任务状态查询接口响应时间在本机运行下保持 500ms 内。
 - 生成任务进度至少在每个关键阶段更新一次。
 
 **约束**:
@@ -54,8 +53,8 @@ OpenAPI 文件和后端测试验证；任务处理使用 fixture 包和缓存响
 - v1 不实现账号、计费、公开市场或公共 mod 二次分发。
 - v1 对外部平台访问必须支持 fixture 或缓存模式，避免测试依赖实时网络。
 
-**规模/范围**: 面向个人或少量用户；单机部署；任务串行或低并发；后续可演进到
-PostgreSQL、对象存储和多 worker。
+**规模/范围**: 面向个人或少量用户；一期本地运行；任务串行或低并发；后续可演进到
+Docker Compose、PostgreSQL、对象存储和多 worker。
 
 ## 宪法检查
 
@@ -171,8 +170,9 @@ data/
 └── cache/
 ```
 
-**结构决策**: 使用前后端分离结构。前端和后端独立测试、独立镜像；worker 复用
-后端业务代码但以独立进程运行；`data/` 作为本地持久化卷。
+**结构决策**: 使用前后端分离结构。前端和后端独立测试；一期默认内联执行任务，worker
+代码保留为后续独立进程入口；`data/` 作为本地持久化目录。`deploy/` 中的 Docker 文件保留，
+但不纳入一期验收。
 
 ## UI/UX 设计方案
 

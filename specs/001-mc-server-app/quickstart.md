@@ -2,16 +2,29 @@
 
 ## 前置条件
 
-- Docker 和 Docker Compose 可用。
+- Python 3.12 可用。
+- Node.js 20 或兼容版本可用。
 - 本机有足够磁盘空间保存 `data/`。
-- 如果需要执行真实启动验证，主机或 worker 镜像需要 Java 17 和 Java 21。
+- 如果需要执行真实启动验证，本机需要 Java 17 或 Java 21。
 - 如果访问 CurseForge API，需要配置对应 API key；没有 key 时应用必须展示
   “CurseForge 来源暂不可用”或使用 fixture 模式。
 
 ## 本地启动
 
+后端：
+
 ```powershell
-docker compose -f deploy/docker-compose.yml up --build
+cd backend
+python -m pip install -e .[dev]
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+前端另开一个终端：
+
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev
 ```
 
 启动后访问：
@@ -52,14 +65,15 @@ http://localhost:8000
 
 ```powershell
 cd backend
-pytest
+python -m pytest
 ```
 
 前端：
 
 ```powershell
 cd frontend
-npm test
+npm.cmd test
+npm.cmd run build
 ```
 
 ## fixture 模式
@@ -88,3 +102,8 @@ data/
 
 默认保留任务产物 72 小时。清理任务必须删除过期上传、工作区和产物，但保留必要的
 结构化任务摘要和可复用知识。
+
+## 二期部署说明
+
+Docker Compose、服务器镜像拉取、Redis 独立 worker 和云服务器长期运行配置放到二期。
+当前一期只要求本地前端、后端、测试和构建正常运行。

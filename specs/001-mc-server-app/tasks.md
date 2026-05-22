@@ -21,7 +21,7 @@
 - [x] T003 初始化前端 React + Vite + TypeScript 项目配置 `frontend/package.json`
 - [x] T004 [P] 配置前端 TypeScript、Vite、Vitest、Tailwind 入口文件 `frontend/tsconfig.json`、`frontend/vite.config.ts`、`frontend/src/styles/index.css`
 - [x] T005 [P] 配置后端 pytest 和测试路径 `backend/pytest.ini`
-- [x] T006 创建 Docker Compose 和镜像文件 `deploy/docker-compose.yml`、`deploy/backend.Dockerfile`、`deploy/frontend.Dockerfile`、`deploy/worker.Dockerfile`
+- [x] T006 创建二期部署预留的 Docker Compose 和镜像文件 `deploy/docker-compose.yml`、`deploy/backend.Dockerfile`、`deploy/frontend.Dockerfile`、`deploy/worker.Dockerfile`
 - [x] T007 创建环境变量示例和数据目录说明 `.env.example`、`data/README.md`
 
 ---
@@ -167,11 +167,11 @@
 
 ## Phase 7：打磨与跨切面质量
 
-**目的**: 完成部署、文档、可访问性、性能和安全收尾。
+**目的**: 完成本地运行、文档、可访问性、性能和安全收尾；服务器部署放到二期。
 
 - [x] T072 [P] 更新本地运行文档 `README.md`
 - [x] T073 [P] 将 quickstart 中的命令同步到 `README.md` 和 `.env.example`
-- [ ] T074 验证 Docker Compose 启动前端、后端、worker、Redis `deploy/docker-compose.yml`
+- [x] T074 将 Docker Compose 启动验证延期为二期服务器搭建任务，当前一期改为验证本地后端、前端和构建流程 `README.md`
 - [x] T075 验证所有用户可见前端文案和后端错误信息均为简体中文 `frontend/src/`、`backend/app/`
 - [x] T076 验证未找到官方服务端时结果页列出 CurseForge、Modrinth、FTB `frontend/src/components/search/OfficialServerCandidates.tsx`
 - [x] T077 验证上传解压路径穿越防护和产物下载路径限制 `backend/app/services/archive_analyzer.py`、`backend/app/services/artifact_access.py`
@@ -179,6 +179,12 @@
 - [x] T079 执行前端无障碍检查，确保表单 label、键盘操作、`aria-live` 状态更新 `frontend/src/components/`
 - [x] T080 运行后端测试套件 `backend/tests/`
 - [x] T081 运行前端测试套件 `frontend/tests/`
+
+### 二期部署候选任务
+
+- 验证 Docker Compose 启动前端、后端、worker、Redis `deploy/docker-compose.yml`
+- 配置服务器镜像源或私有镜像缓存，解决 Docker Hub 拉取基础镜像不稳定问题。
+- 将任务状态持久化到 SQLite 后，再默认启用独立 RQ worker。
 
 ---
 
