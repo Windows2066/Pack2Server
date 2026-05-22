@@ -1,1 +1,35 @@
 .specify/extensions/.cache/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Node
+node_modules/
+dist/
+build/
+coverage/
+*.log
+*.tsbuildinfo
+
+# Environment and local data
+.env
+.env.*
+!/.env.example
+backend/data/**
+data/uploads/**
+data/workspaces/**
+data/artifacts/**
+data/reports/**
+data/cache/**
+!data/README.md
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

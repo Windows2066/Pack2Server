@@ -16,13 +16,13 @@
 
 **目的**: 建立前端、后端、worker、部署和数据目录骨架。
 
-- [ ] T001 创建目录结构 `backend/app/`、`backend/tests/`、`frontend/src/`、`frontend/tests/`、`deploy/`、`data/uploads/`、`data/workspaces/`、`data/artifacts/`、`data/reports/`、`data/cache/`
-- [ ] T002 初始化后端 Python 项目配置 `backend/pyproject.toml`
-- [ ] T003 初始化前端 React + Vite + TypeScript 项目配置 `frontend/package.json`
-- [ ] T004 [P] 配置前端 TypeScript、Vite、Vitest、Tailwind 入口文件 `frontend/tsconfig.json`、`frontend/vite.config.ts`、`frontend/src/styles/index.css`
-- [ ] T005 [P] 配置后端 pytest 和测试路径 `backend/pytest.ini`
-- [ ] T006 创建 Docker Compose 和镜像文件 `deploy/docker-compose.yml`、`deploy/backend.Dockerfile`、`deploy/frontend.Dockerfile`、`deploy/worker.Dockerfile`
-- [ ] T007 创建环境变量示例和数据目录说明 `.env.example`、`data/README.md`
+- [x] T001 创建目录结构 `backend/app/`、`backend/tests/`、`frontend/src/`、`frontend/tests/`、`deploy/`、`data/uploads/`、`data/workspaces/`、`data/artifacts/`、`data/reports/`、`data/cache/`
+- [x] T002 初始化后端 Python 项目配置 `backend/pyproject.toml`
+- [x] T003 初始化前端 React + Vite + TypeScript 项目配置 `frontend/package.json`
+- [x] T004 [P] 配置前端 TypeScript、Vite、Vitest、Tailwind 入口文件 `frontend/tsconfig.json`、`frontend/vite.config.ts`、`frontend/src/styles/index.css`
+- [x] T005 [P] 配置后端 pytest 和测试路径 `backend/pytest.ini`
+- [x] T006 创建 Docker Compose 和镜像文件 `deploy/docker-compose.yml`、`deploy/backend.Dockerfile`、`deploy/frontend.Dockerfile`、`deploy/worker.Dockerfile`
+- [x] T007 创建环境变量示例和数据目录说明 `.env.example`、`data/README.md`
 
 ---
 
@@ -32,18 +32,18 @@
 
 **关键门禁**: 本阶段完成前，不开始任何用户故事实现。
 
-- [ ] T008 创建后端配置和路径管理 `backend/app/core/config.py`、`backend/app/core/paths.py`
-- [ ] T009 [P] 创建后端日志配置 `backend/app/core/logging.py`
-- [ ] T010 创建 SQLite 会话和数据库初始化 `backend/app/db/session.py`
-- [ ] T011 创建数据库模型 `backend/app/db/models.py`
-- [ ] T012 创建 Pydantic schema `backend/app/schemas/task.py`、`backend/app/schemas/pack.py`、`backend/app/schemas/source.py`、`backend/app/schemas/report.py`
-- [ ] T013 创建 RQ 队列连接和 worker 入口 `backend/app/workers/queue.py`、`backend/app/workers/jobs.py`
-- [ ] T014 创建 FastAPI 应用入口和健康检查路由 `backend/app/main.py`、`backend/app/api/routes_health.py`
-- [ ] T015 [P] 创建前端 API 客户端 `frontend/src/lib/api.ts`
-- [ ] T016 [P] 创建前端任务状态格式化工具 `frontend/src/lib/task-status.ts`、`frontend/src/lib/format.ts`
-- [ ] T017 [P] 创建基础 UI 组件目录和共享样式 `frontend/src/components/ui/`
-- [ ] T018 创建契约测试，验证后端路由满足 `specs/001-mc-server-app/contracts/openapi.yaml` 的核心路径 `backend/tests/contract/test_openapi_contract.py`
-- [ ] T019 创建任务状态 API 路由和近期任务路由 `backend/app/api/routes_tasks.py`
+- [x] T008 创建后端配置和路径管理 `backend/app/core/config.py`、`backend/app/core/paths.py`
+- [x] T009 [P] 创建后端日志配置 `backend/app/core/logging.py`
+- [x] T010 创建 SQLite 会话和数据库初始化 `backend/app/db/session.py`
+- [x] T011 创建数据库模型 `backend/app/db/models.py`
+- [x] T012 创建 Pydantic schema `backend/app/schemas/task.py`、`backend/app/schemas/pack.py`、`backend/app/schemas/source.py`、`backend/app/schemas/report.py`
+- [x] T013 创建 RQ 队列连接和 worker 入口 `backend/app/workers/queue.py`、`backend/app/workers/jobs.py`
+- [x] T014 创建 FastAPI 应用入口和健康检查路由 `backend/app/main.py`、`backend/app/api/routes_health.py`
+- [x] T015 [P] 创建前端 API 客户端 `frontend/src/lib/api.ts`
+- [x] T016 [P] 创建前端任务状态格式化工具 `frontend/src/lib/task-status.ts`、`frontend/src/lib/format.ts`
+- [x] T017 [P] 创建基础 UI 组件目录和共享样式 `frontend/src/components/ui/`
+- [x] T018 创建契约测试，验证后端路由满足 `specs/001-mc-server-app/contracts/openapi.yaml` 的核心路径 `backend/tests/contract/test_openapi_contract.py`
+- [x] T019 创建任务状态 API 路由和近期任务路由 `backend/app/api/routes_tasks.py`
 
 **检查点**: 后端可启动，健康检查可用，数据库和队列连接可初始化，前端能调用任务 API。
 
@@ -57,26 +57,26 @@
 
 ### 测试
 
-- [ ] T020 [P] [US1] 创建上传 API 集成测试 `backend/tests/integration/test_upload_generate_flow.py`
-- [ ] T021 [P] [US1] 创建压缩包安全校验单元测试 `backend/tests/unit/test_archive_security.py`
-- [ ] T022 [P] [US1] 创建服务端生成报告单元测试 `backend/tests/unit/test_report_builder.py`
-- [ ] T023 [P] [US1] 创建上传表单前端测试 `frontend/tests/upload-form.test.tsx`
+- [x] T020 [P] [US1] 创建上传 API 集成测试 `backend/tests/integration/test_upload_generate_flow.py`
+- [x] T021 [P] [US1] 创建压缩包安全校验单元测试 `backend/tests/unit/test_archive_security.py`
+- [x] T022 [P] [US1] 创建服务端生成报告单元测试 `backend/tests/unit/test_report_builder.py`
+- [x] T023 [P] [US1] 创建上传表单前端测试 `frontend/tests/upload-form.test.tsx`
 
 ### 实现
 
 - [ ] T024 [P] [US1] 创建整合包 fixture `backend/tests/fixtures/packs/basic_mrpack/`
-- [ ] T025 [US1] 实现上传文件保存和基础校验服务 `backend/app/services/upload_storage.py`
-- [ ] T026 [US1] 实现上传并创建生成任务 API `backend/app/api/routes_uploads.py`
-- [ ] T027 [US1] 实现压缩包分析器，支持 `.zip` 与 `.mrpack` 基础 manifest 识别 `backend/app/services/archive_analyzer.py`
-- [ ] T028 [US1] 实现 jar 元数据读取和 mod 清单提取 `backend/app/services/mod_metadata.py`
-- [ ] T029 [US1] 实现 mod 端侧决策服务和本地规则入口 `backend/app/services/mod_decider.py`、`backend/app/services/rules/client_mods.json`
-- [ ] T030 [US1] 实现服务端目录生成和 `_disabled_client_mods/` 隔离 `backend/app/services/server_generator.py`
-- [ ] T031 [US1] 实现启动验证 runner，包含超时、日志截断和可开关配置 `backend/app/services/verification_runner.py`
-- [ ] T032 [US1] 实现中文报告生成 `backend/app/services/report_builder.py`
+- [x] T025 [US1] 实现上传文件保存和基础校验服务 `backend/app/services/upload_storage.py`
+- [x] T026 [US1] 实现上传并创建生成任务 API `backend/app/api/routes_uploads.py`
+- [x] T027 [US1] 实现压缩包分析器，支持 `.zip` 与 `.mrpack` 基础 manifest 识别 `backend/app/services/archive_analyzer.py`
+- [x] T028 [US1] 实现 jar 元数据读取和 mod 清单提取 `backend/app/services/mod_metadata.py`
+- [x] T029 [US1] 实现 mod 端侧决策服务和本地规则入口 `backend/app/services/mod_decider.py`、`backend/app/services/rules/client_mods.json`
+- [x] T030 [US1] 实现服务端目录生成和 `_disabled_client_mods/` 隔离 `backend/app/services/server_generator.py`
+- [x] T031 [US1] 实现启动验证 runner，包含超时、日志截断和可开关配置 `backend/app/services/verification_runner.py`
+- [x] T032 [US1] 实现中文报告生成 `backend/app/services/report_builder.py`
 - [ ] T033 [US1] 连接 RQ 上传生成任务流程 `backend/app/workers/jobs.py`
-- [ ] T034 [P] [US1] 创建上传组件 `frontend/src/components/upload/UploadDropzone.tsx`
-- [ ] T035 [P] [US1] 创建生成模式表单 `frontend/src/components/upload/GenerateServerForm.tsx`
-- [ ] T036 [US1] 在首页集成上传生成入口 `frontend/src/pages/HomePage.tsx`
+- [x] T034 [P] [US1] 创建上传组件 `frontend/src/components/upload/UploadDropzone.tsx`
+- [x] T035 [P] [US1] 创建生成模式表单 `frontend/src/components/upload/GenerateServerForm.tsx`
+- [x] T036 [US1] 在首页集成上传生成入口 `frontend/src/pages/HomePage.tsx`
 
 **检查点**: 上传生成故事可独立演示；即使启动验证失败，也能产出清晰中文失败报告。
 
@@ -90,24 +90,24 @@
 
 ### 测试
 
-- [ ] T037 [P] [US2] 创建自然语言解析单元测试 `backend/tests/unit/test_query_parser.py`
+- [x] T037 [P] [US2] 创建自然语言解析单元测试 `backend/tests/unit/test_query_parser.py`
 - [ ] T038 [P] [US2] 创建来源检索 fixture 响应 `backend/tests/fixtures/sources/`
-- [ ] T039 [P] [US2] 创建官方服务端检索集成测试 `backend/tests/integration/test_official_search_flow.py`
-- [ ] T040 [P] [US2] 创建自然语言检索前端测试 `frontend/tests/official-search.test.tsx`
+- [x] T039 [P] [US2] 创建官方服务端检索集成测试 `backend/tests/integration/test_official_search_flow.py`
+- [x] T040 [P] [US2] 创建自然语言检索前端测试 `frontend/tests/official-search.test.tsx`
 
 ### 实现
 
-- [ ] T041 [US2] 实现自然语言查询解析器 `backend/app/services/query_parser.py`
-- [ ] T042 [US2] 创建来源统一模型 `backend/app/sources/models.py`
-- [ ] T043 [P] [US2] 实现 Modrinth 来源客户端 `backend/app/sources/modrinth.py`
-- [ ] T044 [P] [US2] 实现 CurseForge 来源客户端和 API key 缺失处理 `backend/app/sources/curseforge.py`
-- [ ] T045 [P] [US2] 实现 FTB 来源客户端占位与不可用说明 `backend/app/sources/ftb.py`
-- [ ] T046 [US2] 实现官方服务端聚合检索服务 `backend/app/services/official_server_search.py`
-- [ ] T047 [US2] 实现自然语言检索任务 API `backend/app/api/routes_search.py`
+- [x] T041 [US2] 实现自然语言查询解析器 `backend/app/services/query_parser.py`
+- [x] T042 [US2] 创建来源统一模型 `backend/app/sources/models.py`
+- [x] T043 [P] [US2] 实现 Modrinth 来源客户端 `backend/app/sources/modrinth.py`
+- [x] T044 [P] [US2] 实现 CurseForge 来源客户端和 API key 缺失处理 `backend/app/sources/curseforge.py`
+- [x] T045 [P] [US2] 实现 FTB 来源客户端占位与不可用说明 `backend/app/sources/ftb.py`
+- [x] T046 [US2] 实现官方服务端聚合检索服务 `backend/app/services/official_server_search.py`
+- [x] T047 [US2] 实现自然语言检索任务 API `backend/app/api/routes_search.py`
 - [ ] T048 [US2] 连接 RQ 官方服务端检索任务流程 `backend/app/workers/jobs.py`
-- [ ] T049 [P] [US2] 创建自然语言输入组件 `frontend/src/components/search/OfficialServerSearchForm.tsx`
-- [ ] T050 [P] [US2] 创建官方服务端候选列表组件 `frontend/src/components/search/OfficialServerCandidates.tsx`
-- [ ] T051 [US2] 在首页集成自然语言检索入口 `frontend/src/pages/HomePage.tsx`
+- [x] T049 [P] [US2] 创建自然语言输入组件 `frontend/src/components/search/OfficialServerSearchForm.tsx`
+- [x] T050 [P] [US2] 创建官方服务端候选列表组件 `frontend/src/components/search/OfficialServerCandidates.tsx`
+- [x] T051 [US2] 在首页集成自然语言检索入口 `frontend/src/pages/HomePage.tsx`
 
 **检查点**: 官方服务端检索故事可独立演示；未找到时必须显示已检索来源。
 
@@ -121,20 +121,20 @@
 
 ### 测试
 
-- [ ] T052 [P] [US3] 创建任务详情 API 集成测试 `backend/tests/integration/test_task_detail_and_events.py`
-- [ ] T053 [P] [US3] 创建产物下载 API 集成测试 `backend/tests/integration/test_artifact_download.py`
-- [ ] T054 [P] [US3] 创建任务页前端测试 `frontend/tests/task-page.test.tsx`
+- [x] T052 [P] [US3] 创建任务详情 API 集成测试 `backend/tests/integration/test_task_detail_and_events.py`
+- [x] T053 [P] [US3] 创建产物下载 API 集成测试 `backend/tests/integration/test_artifact_download.py`
+- [x] T054 [P] [US3] 创建任务页前端测试 `frontend/tests/task-page.test.tsx`
 
 ### 实现
 
-- [ ] T055 [US3] 完善任务详情、任务事件和产物下载路由 `backend/app/api/routes_tasks.py`
-- [ ] T056 [US3] 实现任务事件写入辅助服务 `backend/app/services/task_events.py`
-- [ ] T057 [US3] 实现产物下载安全检查 `backend/app/services/artifact_access.py`
-- [ ] T058 [P] [US3] 创建任务阶段进度组件 `frontend/src/components/tasks/TaskProgress.tsx`
-- [ ] T059 [P] [US3] 创建任务事件列表组件 `frontend/src/components/tasks/TaskEventList.tsx`
-- [ ] T060 [P] [US3] 创建结果报告组件 `frontend/src/components/tasks/TaskResultReport.tsx`
-- [ ] T061 [US3] 创建任务详情页 `frontend/src/pages/TaskPage.tsx`
-- [ ] T062 [US3] 实现任务状态轮询和错误恢复 `frontend/src/lib/api.ts`
+- [x] T055 [US3] 完善任务详情、任务事件和产物下载路由 `backend/app/api/routes_tasks.py`
+- [x] T056 [US3] 实现任务事件写入辅助服务 `backend/app/services/task_events.py`
+- [x] T057 [US3] 实现产物下载安全检查 `backend/app/services/artifact_access.py`
+- [x] T058 [P] [US3] 创建任务阶段进度组件 `frontend/src/components/tasks/TaskProgress.tsx`
+- [x] T059 [P] [US3] 创建任务事件列表组件 `frontend/src/components/tasks/TaskEventList.tsx`
+- [x] T060 [P] [US3] 创建结果报告组件 `frontend/src/components/tasks/TaskResultReport.tsx`
+- [x] T061 [US3] 创建任务详情页 `frontend/src/pages/TaskPage.tsx`
+- [x] T062 [US3] 实现任务状态轮询和错误恢复 `frontend/src/lib/api.ts`
 
 **检查点**: 用户可以不刷新页面查看任务推进，并能下载成功产物或复制失败报告。
 
@@ -148,18 +148,18 @@
 
 ### 测试
 
-- [ ] T063 [P] [US4] 创建清理服务单元测试 `backend/tests/unit/test_cleanup.py`
-- [ ] T064 [P] [US4] 创建历史任务 API 集成测试 `backend/tests/integration/test_task_history.py`
-- [ ] T065 [P] [US4] 创建历史页前端测试 `frontend/tests/history-page.test.tsx`
+- [x] T063 [P] [US4] 创建清理服务单元测试 `backend/tests/unit/test_cleanup.py`
+- [x] T064 [P] [US4] 创建历史任务 API 集成测试 `backend/tests/integration/test_task_history.py`
+- [x] T065 [P] [US4] 创建历史页前端测试 `frontend/tests/history-page.test.tsx`
 
 ### 实现
 
-- [ ] T066 [US4] 实现过期任务和文件清理服务 `backend/app/services/cleanup.py`
-- [ ] T067 [US4] 实现清理任务 worker 入口 `backend/app/workers/jobs.py`
+- [x] T066 [US4] 实现过期任务和文件清理服务 `backend/app/services/cleanup.py`
+- [x] T067 [US4] 实现清理任务 worker 入口 `backend/app/workers/jobs.py`
 - [ ] T068 [US4] 完善近期任务 API 的过期状态展示 `backend/app/api/routes_tasks.py`
-- [ ] T069 [P] [US4] 创建近期任务列表组件 `frontend/src/components/tasks/RecentTasks.tsx`
-- [ ] T070 [US4] 创建历史任务页 `frontend/src/pages/HistoryPage.tsx`
-- [ ] T071 [US4] 在首页展示近期任务摘要 `frontend/src/pages/HomePage.tsx`
+- [x] T069 [P] [US4] 创建近期任务列表组件 `frontend/src/components/tasks/RecentTasks.tsx`
+- [x] T070 [US4] 创建历史任务页 `frontend/src/pages/HistoryPage.tsx`
+- [x] T071 [US4] 在首页展示近期任务摘要 `frontend/src/pages/HomePage.tsx`
 
 **检查点**: 历史结果可查看，过期结果不再提供下载且提示清晰。
 
