@@ -7,6 +7,8 @@ from app.core.config import get_settings
 from app.schemas.task import TaskCreated, TaskDetail
 from app.services.upload_storage import save_upload
 from app.api.routes_tasks import TASKS
+from app.workers.jobs import run_upload_generate_task
+from app.workers.queue import enqueue_or_run_job
 
 router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 
@@ -26,9 +28,10 @@ async def upload_pack(file: UploadFile):
         status="queued",
         stage="upload_validation",
         progress_message="生成任务已创建，等待分析整合包",
-        input_summary=f"{path.name} ({size} bytes)",
+        input_summary=str(path),
         created_at=now,
         events=[],
         artifacts=[],
     )
+    enqueue_or_run_job(run_upload_generate_task, task_id)
     return TaskCreated(task_id=task_id, message="生成任务已创建")

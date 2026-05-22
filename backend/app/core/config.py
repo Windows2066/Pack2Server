@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     max_upload_bytes: int = 2 * 1024 * 1024 * 1024
     artifact_retention_hours: int = 72
     enable_startup_verification: bool = False
+    run_jobs_inline: bool = True
     use_fixtures: bool = True
     curseforge_api_key: str | None = None
 

@@ -73,7 +73,7 @@
 - [x] T030 [US1] 实现服务端目录生成和 `_disabled_client_mods/` 隔离 `backend/app/services/server_generator.py`
 - [x] T031 [US1] 实现启动验证 runner，包含超时、日志截断和可开关配置 `backend/app/services/verification_runner.py`
 - [x] T032 [US1] 实现中文报告生成 `backend/app/services/report_builder.py`
-- [ ] T033 [US1] 连接 RQ 上传生成任务流程 `backend/app/workers/jobs.py`
+- [x] T033 [US1] 连接 RQ 上传生成任务流程 `backend/app/workers/jobs.py`
 - [x] T034 [P] [US1] 创建上传组件 `frontend/src/components/upload/UploadDropzone.tsx`
 - [x] T035 [P] [US1] 创建生成模式表单 `frontend/src/components/upload/GenerateServerForm.tsx`
 - [x] T036 [US1] 在首页集成上传生成入口 `frontend/src/pages/HomePage.tsx`
@@ -104,7 +104,7 @@
 - [x] T045 [P] [US2] 实现 FTB 来源客户端占位与不可用说明 `backend/app/sources/ftb.py`
 - [x] T046 [US2] 实现官方服务端聚合检索服务 `backend/app/services/official_server_search.py`
 - [x] T047 [US2] 实现自然语言检索任务 API `backend/app/api/routes_search.py`
-- [ ] T048 [US2] 连接 RQ 官方服务端检索任务流程 `backend/app/workers/jobs.py`
+- [x] T048 [US2] 连接 RQ 官方服务端检索任务流程 `backend/app/workers/jobs.py`
 - [x] T049 [P] [US2] 创建自然语言输入组件 `frontend/src/components/search/OfficialServerSearchForm.tsx`
 - [x] T050 [P] [US2] 创建官方服务端候选列表组件 `frontend/src/components/search/OfficialServerCandidates.tsx`
 - [x] T051 [US2] 在首页集成自然语言检索入口 `frontend/src/pages/HomePage.tsx`

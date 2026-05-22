@@ -28,3 +28,11 @@ def test_upload_creates_generation_task():
     body = response.json()
     assert body["status"] == "queued"
     assert "生成任务已创建" in body["message"]
+
+    detail = client.get(f"/api/tasks/{body['task_id']}")
+    assert detail.status_code == 200
+    detail_body = detail.json()
+    assert detail_body["status"] == "succeeded"
+    assert detail_body["stage"] == "completed"
+    assert detail_body["pack_identity"]["minecraft_version"] == "1.20.1"
+    assert "服务端生成完成" in detail_body["report"]

@@ -13,6 +13,13 @@ def test_official_search_returns_task_with_chinese_message():
     assert body["status"] == "queued"
     assert "检索任务已创建" in body["message"]
 
+    detail = client.get(f"/api/tasks/{body['task_id']}")
+    assert detail.status_code == 200
+    detail_body = detail.json()
+    assert detail_body["status"] == "succeeded"
+    assert detail_body["official_candidates"]
+    assert "已检索来源" in detail_body["report"]
+
 
 def test_empty_official_search_rejected():
     client = TestClient(app)

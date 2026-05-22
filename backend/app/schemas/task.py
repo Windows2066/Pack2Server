@@ -38,8 +38,10 @@ class TaskSummary(BaseModel):
 
 class TaskDetail(TaskSummary):
     stage: str
+    input_summary: str | None = None
     events: list[TaskEventRead] = []
     artifacts: list[ArtifactRead] = []
     error_message: str | None = None
     pack_identity: dict | None = None
     official_candidates: list[dict] = []
+    report: str | None = None

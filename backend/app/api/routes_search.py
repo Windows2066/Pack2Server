@@ -7,6 +7,8 @@ from pydantic import BaseModel
 from app.api.routes_tasks import TASKS
 from app.schemas.task import TaskCreated, TaskDetail
 from app.services.query_parser import parse_pack_query
+from app.workers.jobs import run_official_search_task
+from app.workers.queue import enqueue_or_run_job
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 
@@ -34,4 +36,5 @@ def create_official_search(request: OfficialSearchRequest):
         events=[],
         artifacts=[],
     )
+    enqueue_or_run_job(run_official_search_task, task_id)
     return TaskCreated(task_id=task_id, message="检索任务已创建")
