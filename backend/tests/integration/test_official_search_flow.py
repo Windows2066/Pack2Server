@@ -1,9 +1,11 @@
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.official_server_search import clear_official_server_cache
 
 
 def test_official_search_returns_task_with_chinese_message():
+    clear_official_server_cache()
     client = TestClient(app)
 
     response = client.post("/api/search/official-server", json={"query": "ATM10 最新版"})

@@ -66,6 +66,9 @@ CURSEFORGE_API_KEY=
 
 `RUN_JOBS_INLINE=true` 适合本地和当前 MVP；此模式下不需要先启动 Redis。后续任务状态完全落到 SQLite 后，可以切换为 RQ worker 异步执行。
 
+`USE_FIXTURES=true` 会使用本地样例结果，适合开发和测试。要执行真实官方来源检索，将它改为
+`USE_FIXTURES=false`；CurseForge 真实检索还需要配置 `CURSEFORGE_API_KEY`。
+
 ## 开发验证
 
 后端：
@@ -98,7 +101,7 @@ data/
 
 ## 当前限制
 
-- 官方来源客户端仍是 fixture/占位级实现，真实 API 细节需要继续补齐。
+- 官方来源客户端已接入真实检索路径：Modrinth 使用公开 API，CurseForge 需要 API key，FTB 使用官方 Server Files 页面提取安装器链接。开发测试仍默认保留 fixture 模式。
 - RQ 入口已经接入，但当前 MVP 默认内联执行；跨进程 worker 状态持久化需要后续接入 SQLite 任务仓库。
 - 服务端生成目前完成基础整合包分析和报告，还未生成完整可运行服务端压缩包。
 - Docker Compose 文件已保留在 `deploy/`，但服务器部署和镜像拉取问题放到二期处理。

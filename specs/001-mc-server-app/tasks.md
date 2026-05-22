@@ -99,9 +99,9 @@
 
 - [x] T041 [US2] 实现自然语言查询解析器 `backend/app/services/query_parser.py`
 - [x] T042 [US2] 创建来源统一模型 `backend/app/sources/models.py`
-- [x] T043 [P] [US2] 实现 Modrinth 来源客户端 `backend/app/sources/modrinth.py`
-- [x] T044 [P] [US2] 实现 CurseForge 来源客户端和 API key 缺失处理 `backend/app/sources/curseforge.py`
-- [x] T045 [P] [US2] 实现 FTB 来源客户端占位与不可用说明 `backend/app/sources/ftb.py`
+- [x] T043 [P] [US2] 实现 Modrinth 真实来源客户端和 fixture 测试路径 `backend/app/sources/modrinth.py`
+- [x] T044 [P] [US2] 实现 CurseForge 真实来源客户端和 API key 缺失处理 `backend/app/sources/curseforge.py`
+- [x] T045 [P] [US2] 实现 FTB Server Files 来源客户端和不可确认时的空结果处理 `backend/app/sources/ftb.py`
 - [x] T046 [US2] 实现官方服务端聚合检索服务 `backend/app/services/official_server_search.py`
 - [x] T047 [US2] 实现自然语言检索任务 API `backend/app/api/routes_search.py`
 - [x] T048 [US2] 连接 RQ 官方服务端检索任务流程 `backend/app/workers/jobs.py`

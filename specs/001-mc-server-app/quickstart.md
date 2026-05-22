@@ -87,6 +87,16 @@ USE_FIXTURES=true
 fixture 模式下，平台检索使用本地响应样本，整合包分析使用 `backend/tests/fixtures/`
 里的小型示例包，避免测试依赖实时网络。
 
+如需执行真实官方服务端检索：
+
+```text
+USE_FIXTURES=false
+CURSEFORGE_API_KEY=<你的 CurseForge API key>
+```
+
+Modrinth 可直接使用公开 API；CurseForge 没有 API key 时会跳过；FTB 会从官方
+Server Files 页面提取服务端安装器链接，无法确认匹配时返回空结果。
+
 ## 数据目录
 
 ```text
