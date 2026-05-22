@@ -4,6 +4,7 @@ import zipfile
 import pytest
 
 from app.services.archive_analyzer import ArchiveSecurityError, analyze_archive
+from app.services.artifact_access import resolve_artifact_path
 
 
 def _zip_bytes(entries: dict[str, str]) -> bytes:
@@ -20,6 +21,11 @@ def test_rejects_path_traversal_archive(tmp_path):
 
     with pytest.raises(ArchiveSecurityError):
         analyze_archive(archive_path)
+
+
+def test_rejects_artifact_path_outside_data_root():
+    with pytest.raises(ValueError):
+        resolve_artifact_path("../secret.zip")
 
 
 def test_reads_modrinth_index(tmp_path):

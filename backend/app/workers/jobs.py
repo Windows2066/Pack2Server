@@ -27,7 +27,7 @@ def run_upload_generate_task(task_id: str) -> str:
         task.status = "running"
         task.stage = "pack_analysis"
         task.progress_message = "正在分析整合包"
-        _add_event(task, task.stage, "开始分析整合包 manifest")
+        _add_event(task, task.stage, "开始分析整合包清单文件")
 
         if not task.input_summary:
             raise ValueError("任务缺少上传文件路径")

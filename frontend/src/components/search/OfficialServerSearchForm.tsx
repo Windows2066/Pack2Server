@@ -32,7 +32,7 @@ export function OfficialServerSearchForm({ onSubmit, isSubmitting }: OfficialSer
           placeholder="例如：我想要 ATM10 最新版服务端"
         />
       </label>
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
       <Button disabled={isSubmitting} type="submit">
         {isSubmitting ? '正在检索' : '查找官方服务端'}
       </Button>

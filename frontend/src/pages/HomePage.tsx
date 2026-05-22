@@ -47,17 +47,17 @@ export function HomePage() {
           <p className="mt-3 max-w-2xl text-slate-700">上传客户端整合包生成服务端，或直接查找官方服务端。</p>
         </div>
         <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1">
-          <button className={`rounded-md px-3 py-2 text-sm ${mode === 'upload' ? 'bg-emerald-700 text-white' : 'text-slate-700'}`} onClick={() => setMode('upload')} type="button">
+          <button aria-pressed={mode === 'upload'} className={`rounded-md px-3 py-2 text-sm ${mode === 'upload' ? 'bg-emerald-700 text-white' : 'text-slate-700'}`} onClick={() => setMode('upload')} type="button">
             上传生成
           </button>
-          <button className={`rounded-md px-3 py-2 text-sm ${mode === 'search' ? 'bg-emerald-700 text-white' : 'text-slate-700'}`} onClick={() => setMode('search')} type="button">
+          <button aria-pressed={mode === 'search'} className={`rounded-md px-3 py-2 text-sm ${mode === 'search' ? 'bg-emerald-700 text-white' : 'text-slate-700'}`} onClick={() => setMode('search')} type="button">
             查找官方服务端
           </button>
         </div>
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-5">
           {mode === 'upload' ? <GenerateServerForm isSubmitting={isSubmitting} onSubmit={handleUpload} /> : <OfficialServerSearchForm isSubmitting={isSubmitting} onSubmit={handleSearch} />}
         </div>
-        {message ? <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-900">{message}</p> : null}
+        {message ? <p aria-live="polite" className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-900">{message}</p> : null}
       </section>
       <aside className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-950">近期任务</h2>

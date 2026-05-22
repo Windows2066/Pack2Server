@@ -12,7 +12,7 @@ async def search_modrinth_official_server(query: str) -> list[SourceSearchResult
             minecraft_version=None,
             loader=None,
             download_url=None,
-            match_reason="fixture 模式下的 Modrinth 候选",
+            match_reason="样例模式下的 Modrinth 候选",
             confidence=0.6,
         )
     ]

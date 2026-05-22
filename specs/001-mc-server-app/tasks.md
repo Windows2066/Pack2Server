@@ -172,13 +172,13 @@
 - [x] T072 [P] 更新本地运行文档 `README.md`
 - [x] T073 [P] 将 quickstart 中的命令同步到 `README.md` 和 `.env.example`
 - [ ] T074 验证 Docker Compose 启动前端、后端、worker、Redis `deploy/docker-compose.yml`
-- [ ] T075 验证所有用户可见前端文案和后端错误信息均为简体中文 `frontend/src/`、`backend/app/`
-- [ ] T076 验证未找到官方服务端时结果页列出 CurseForge、Modrinth、FTB `frontend/src/components/search/OfficialServerCandidates.tsx`
-- [ ] T077 验证上传解压路径穿越防护和产物下载路径限制 `backend/app/services/archive_analyzer.py`、`backend/app/services/artifact_access.py`
-- [ ] T078 优化来源检索缓存和任务状态查询性能 `backend/app/sources/`、`backend/app/api/routes_tasks.py`
-- [ ] T079 执行前端无障碍检查，确保表单 label、键盘操作、`aria-live` 状态更新 `frontend/src/components/`
-- [ ] T080 运行后端测试套件 `backend/tests/`
-- [ ] T081 运行前端测试套件 `frontend/tests/`
+- [x] T075 验证所有用户可见前端文案和后端错误信息均为简体中文 `frontend/src/`、`backend/app/`
+- [x] T076 验证未找到官方服务端时结果页列出 CurseForge、Modrinth、FTB `frontend/src/components/search/OfficialServerCandidates.tsx`
+- [x] T077 验证上传解压路径穿越防护和产物下载路径限制 `backend/app/services/archive_analyzer.py`、`backend/app/services/artifact_access.py`
+- [x] T078 优化来源检索缓存和任务状态查询性能 `backend/app/sources/`、`backend/app/api/routes_tasks.py`
+- [x] T079 执行前端无障碍检查，确保表单 label、键盘操作、`aria-live` 状态更新 `frontend/src/components/`
+- [x] T080 运行后端测试套件 `backend/tests/`
+- [x] T081 运行前端测试套件 `frontend/tests/`
 
 ---
 
