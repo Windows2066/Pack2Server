@@ -64,7 +64,7 @@
 
 ### 实现
 
-- [ ] T024 [P] [US1] 创建整合包 fixture `backend/tests/fixtures/packs/basic_mrpack/`
+- [x] T024 [P] [US1] 创建整合包 fixture `backend/tests/fixtures/packs/basic_mrpack/`
 - [x] T025 [US1] 实现上传文件保存和基础校验服务 `backend/app/services/upload_storage.py`
 - [x] T026 [US1] 实现上传并创建生成任务 API `backend/app/api/routes_uploads.py`
 - [x] T027 [US1] 实现压缩包分析器，支持 `.zip` 与 `.mrpack` 基础 manifest 识别 `backend/app/services/archive_analyzer.py`
@@ -91,7 +91,7 @@
 ### 测试
 
 - [x] T037 [P] [US2] 创建自然语言解析单元测试 `backend/tests/unit/test_query_parser.py`
-- [ ] T038 [P] [US2] 创建来源检索 fixture 响应 `backend/tests/fixtures/sources/`
+- [x] T038 [P] [US2] 创建来源检索 fixture 响应 `backend/tests/fixtures/sources/`
 - [x] T039 [P] [US2] 创建官方服务端检索集成测试 `backend/tests/integration/test_official_search_flow.py`
 - [x] T040 [P] [US2] 创建自然语言检索前端测试 `frontend/tests/official-search.test.tsx`
 
@@ -156,7 +156,7 @@
 
 - [x] T066 [US4] 实现过期任务和文件清理服务 `backend/app/services/cleanup.py`
 - [x] T067 [US4] 实现清理任务 worker 入口 `backend/app/workers/jobs.py`
-- [ ] T068 [US4] 完善近期任务 API 的过期状态展示 `backend/app/api/routes_tasks.py`
+- [x] T068 [US4] 完善近期任务 API 的过期状态展示 `backend/app/api/routes_tasks.py`
 - [x] T069 [P] [US4] 创建近期任务列表组件 `frontend/src/components/tasks/RecentTasks.tsx`
 - [x] T070 [US4] 创建历史任务页 `frontend/src/pages/HistoryPage.tsx`
 - [x] T071 [US4] 在首页展示近期任务摘要 `frontend/src/pages/HomePage.tsx`

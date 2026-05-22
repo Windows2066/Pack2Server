@@ -1,0 +1,13 @@
+{
+  "source": "Modrinth",
+  "query": "ATM10",
+  "candidates": [
+    {
+      "project_id": "example-atm10",
+      "name": "All the Mods 10",
+      "version": "1.0.0",
+      "download_url": "https://example.invalid/modrinth/atm10-server.zip",
+      "evidence": "fixture: Modrinth 版本文件包含 server_pack"
+    }
+  ]
+}
