@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,11 +16,18 @@ class Settings(BaseSettings):
     run_jobs_inline: bool = True
     use_fixtures: bool = True
     curseforge_api_key: str | None = None
+    couseforge_api_key: str | None = None
     deepseek_api_key: str | None = None
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-v4-flash"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    @model_validator(mode="after")
+    def normalize_common_env_typos(self) -> "Settings":
+        if not self.curseforge_api_key and self.couseforge_api_key:
+            self.curseforge_api_key = self.couseforge_api_key
+        return self
 
 
 @lru_cache
