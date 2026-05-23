@@ -1,4 +1,6 @@
 import hashlib
+import threading
+import time
 import zipfile
 
 import pytest
@@ -102,6 +104,49 @@ def test_build_runnable_server_artifact_downloads_modrinth_remote_mods(tmp_path)
 
     assert "mods/remote-lib.jar" in names
     assert "_disabled_client_mods/journeymap-client.jar" in names
+
+
+def test_build_runnable_server_artifact_downloads_remote_mods_concurrently(tmp_path):
+    upload_archive = tmp_path / "pack.mrpack"
+    with zipfile.ZipFile(upload_archive, "w") as archive:
+        archive.writestr("modrinth.index.json", "{}")
+
+    active_downloads = 0
+    max_active_downloads = 0
+    lock = threading.Lock()
+
+    def fetcher(remote_file: RemoteModFile) -> bytes:
+        nonlocal active_downloads, max_active_downloads
+        with lock:
+            active_downloads += 1
+            max_active_downloads = max(max_active_downloads, active_downloads)
+        time.sleep(0.05)
+        with lock:
+            active_downloads -= 1
+        return remote_file.path.encode("utf-8")
+
+    artifact = build_runnable_server_artifact(
+        task_id="task-concurrent",
+        upload_archive=upload_archive,
+        workspace_root=tmp_path / "workspaces",
+        artifact_root=tmp_path / "artifacts",
+        analysis=ArchiveAnalysis(
+            pack_name="remote pack",
+            pack_version="1.0.0",
+            minecraft_version="1.20.1",
+            loader="fabric",
+            mod_files=[],
+            remote_mod_files=[
+                RemoteModFile(path=f"mods/remote-{index}.jar", downloads=[f"https://example.test/{index}.jar"])
+                for index in range(4)
+            ],
+        ),
+        remote_fetcher=fetcher,
+        remote_download_workers=4,
+    )
+
+    assert artifact.kept_mods == 4
+    assert max_active_downloads > 1
 
 
 def test_build_runnable_server_artifact_uses_curseforge_downloaded_file_name(tmp_path):

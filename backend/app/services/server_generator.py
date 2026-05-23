@@ -1,6 +1,7 @@
 import hashlib
 import shutil
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Callable
@@ -36,6 +37,13 @@ class RemoteFetchResult:
     file_name: str | None = None
 
 
+@dataclass(frozen=True)
+class DownloadedRemoteMod:
+    remote_file: RemoteModFile
+    content: bytes
+    file_name: str
+
+
 class RemoteModDownloadError(RuntimeError):
     pass
 
@@ -59,6 +67,7 @@ def build_runnable_server_artifact(
     artifact_root: Path,
     analysis: ArchiveAnalysis,
     remote_fetcher: Callable[[RemoteModFile], bytes | RemoteFetchResult] | None = None,
+    remote_download_workers: int | None = None,
 ) -> GeneratedServerArtifact:
     workspace_path = workspace_root / task_id
     archive_path = artifact_root / f"{task_id}-server.zip"
@@ -103,21 +112,17 @@ def build_runnable_server_artifact(
                 _extract_member(archive, member, workspace_path / Path(*normalized.parts))
 
     fetch_remote = remote_fetcher or _fetch_remote_mod_file
-    for remote_file in analysis.remote_mod_files:
-        remote_path = PurePosixPath(remote_file.path)
-        _assert_safe_remote_mod_path(remote_path)
-        if remote_path.name in copied_mod_names:
+    downloaded_remote_mods = _download_remote_mods(
+        analysis.remote_mod_files,
+        copied_mod_names,
+        fetch_remote,
+        remote_download_workers or get_settings().remote_mod_download_workers,
+    )
+    for downloaded in downloaded_remote_mods:
+        content = downloaded.content
+        file_name = downloaded.file_name
+        if file_name in copied_mod_names:
             continue
-
-        fetched = fetch_remote(remote_file)
-        if isinstance(fetched, RemoteFetchResult):
-            content = fetched.content
-            file_name = fetched.file_name or remote_path.name
-        else:
-            content = fetched
-            file_name = remote_path.name
-        _assert_safe_file_name(file_name)
-        _verify_remote_mod_hash(remote_file, content)
 
         decision, _, _ = decide_mod_side(file_name)
         target_dir = (
@@ -144,6 +149,54 @@ def build_runnable_server_artifact(
         kept_mods=kept_mods,
         disabled_mods=disabled_mods,
     )
+
+
+def _download_remote_mods(
+    remote_files: list[RemoteModFile],
+    copied_mod_names: set[str],
+    fetch_remote: Callable[[RemoteModFile], bytes | RemoteFetchResult],
+    worker_count: int,
+) -> list[DownloadedRemoteMod]:
+    pending_remote_files: list[RemoteModFile] = []
+    for remote_file in remote_files:
+        remote_path = PurePosixPath(remote_file.path)
+        _assert_safe_remote_mod_path(remote_path)
+        if remote_path.name in copied_mod_names:
+            continue
+        pending_remote_files.append(remote_file)
+
+    if not pending_remote_files:
+        return []
+
+    workers = max(1, worker_count)
+    if workers == 1 or len(pending_remote_files) == 1:
+        return [
+            _download_one_remote_mod(remote_file, fetch_remote)
+            for remote_file in pending_remote_files
+        ]
+
+    with ThreadPoolExecutor(max_workers=min(workers, len(pending_remote_files))) as executor:
+        return list(executor.map(lambda item: _download_one_remote_mod(item, fetch_remote), pending_remote_files))
+
+
+def _download_one_remote_mod(
+    remote_file: RemoteModFile,
+    fetch_remote: Callable[[RemoteModFile], bytes | RemoteFetchResult],
+) -> DownloadedRemoteMod:
+    remote_path = PurePosixPath(remote_file.path)
+    _assert_safe_remote_mod_path(remote_path)
+
+    fetched = fetch_remote(remote_file)
+    if isinstance(fetched, RemoteFetchResult):
+        content = fetched.content
+        file_name = fetched.file_name or remote_path.name
+    else:
+        content = fetched
+        file_name = remote_path.name
+    _assert_safe_file_name(file_name)
+    _verify_remote_mod_hash(remote_file, content)
+
+    return DownloadedRemoteMod(remote_file=remote_file, content=content, file_name=file_name)
 
 
 def write_verification_report(workspace_path: Path, result: VerificationResult) -> Path:

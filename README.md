@@ -62,6 +62,7 @@ ARTIFACT_RETENTION_HOURS=72
 ENABLE_STARTUP_VERIFICATION=false
 RUN_JOBS_INLINE=true
 USE_FIXTURES=true
+REMOTE_MOD_DOWNLOAD_WORKERS=8
 CURSEFORGE_API_KEY=
 DEEPSEEK_API_KEY=
 DEEPSEEK_BASE_URL=https://api.deepseek.com
@@ -84,6 +85,9 @@ rq worker default --url redis://localhost:6379/0
 
 `USE_FIXTURES=true` 会使用本地样例结果，适合开发和测试。要执行真实官方来源检索，将它改为
 `USE_FIXTURES=false`；CurseForge 真实检索还需要配置 `CURSEFORGE_API_KEY`。
+
+`REMOTE_MOD_DOWNLOAD_WORKERS` 控制从整合包 manifest 下载远程 mod 时的并发线程数。默认 `8`，
+本地网络较好时可以适当调高；如果遇到平台限流或连接失败，可以调低。
 
 `DEEPSEEK_API_KEY` 用于复杂自然语言解析和候选整合包识别。未配置时会自动回退到本地规则解析。
 不要把真实 key 写入仓库；`.env`、`.env.*`、`*.env`、`*.key` 和 `secrets/` 已被 `.gitignore` 忽略。

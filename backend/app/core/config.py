@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     enable_startup_verification: bool = False
     run_jobs_inline: bool = True
     use_fixtures: bool = True
+    remote_mod_download_workers: int = 8
     curseforge_api_key: str | None = None
     couseforge_api_key: str | None = None
     deepseek_api_key: str | None = None
