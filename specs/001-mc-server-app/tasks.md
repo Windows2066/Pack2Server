@@ -295,15 +295,35 @@ T060 结果报告组件
 - [x] T092 [US1] 实现 CurseForge 与 Modrinth 平台端侧 metadata 查询和 fixture 测试 `backend/app/services/server_generator.py`
 - [x] T093 [US1] 在生成流程中优先应用平台端侧证据，且 CurseForge 优先级高于 Modrinth `backend/app/services/mod_decider.py`
 
-### 第三批实现：MCMod 参考源
+### 第三批实现：MCMod 参考源与 DeepSeek 取舍
 
-- [ ] T094 [US1] 设计并实现 MCMod 运行环境 provider 和缓存模型 `backend/app/services/mcmod_provider.py`
-- [ ] T095 [US1] 为 MCMod 页面不可用、未收录和缓存命中创建 fixture 测试 `backend/tests/unit/test_mcmod_provider.py`
-- [ ] T096 [US1] 将 MCMod 证据接入端侧判定器，且不可用时降级为无证据 `backend/app/services/mod_decider.py`
+- [ ] T094 [P] [US1] 为 MCMod 搜索结果、模组页运行环境、页面不可用、未收录和缓存命中创建 fixture 测试 `backend/tests/unit/test_mcmod_provider.py`
+- [ ] T095 [US1] 设计并实现 MCMod 运行环境 provider、候选校验和缓存模型 `backend/app/services/mcmod_provider.py`
+- [ ] T096 [US1] 将 MCMod 运行环境映射为 `keep_server`、`disable_client_only`、`needs_review` 证据 `backend/app/services/mod_decider.py`
+- [ ] T097 [US1] 接入 MCMod provider 到服务端生成流程，且不可用时降级为无证据 `backend/app/services/server_generator.py`
+- [x] T098 [P] [US1] 编写 DeepSeek 介入边界文档，明确只用于候选歧义解释和冲突说明，不作为强判定证据 `specs/001-mc-server-app/research.md`
+- [ ] T099 [US1] 为 DeepSeek 可选辅助预留配置项和禁用默认值 `backend/app/core/config.py`、`.env.example`
 
-### 第四批实现：本地规则自扩展
+### 第四批实现：Modrinth hash lookup 与 DeEarthX 客户端判断语义
 
-- [ ] T097 [US1] 设计候选规则数据结构和本地保存路径 `data/rules/local_mod_side_rule_candidates.json`
-- [ ] T098 [US1] 从启动验证失败日志生成候选规则，不自动启用 `backend/app/services/verification_runner.py`
-- [ ] T099 [US1] 提供确认后写入 `data/rules/local_mod_side_rules.json` 的服务层接口 `backend/app/services/mod_side_rule_store.py`
-- [ ] T100 [US1] 在报告中展示候选规则和确认前风险说明 `backend/app/services/server_generator.py`
+- [ ] T100 [P] [US1] 为 Modrinth hash lookup 批量查询、缓存命中、未命中和网络失败创建单元测试 `backend/tests/unit/test_modrinth_hash_lookup.py`
+- [ ] T101 [US1] 实现 jar SHA1 批量计算和 Modrinth `POST /v2/version_files` 查询服务 `backend/app/services/modrinth_hash_lookup.py`
+- [ ] T102 [US1] 将 hash lookup 结果转换为 `modrinth_hash` 平台证据并接入统一端侧合并 `backend/app/services/mod_decider.py`
+- [ ] T103 [US1] 调整 Modrinth 端侧判断逻辑，采用 DeEarthX 语义：`client_side=required` 或 `client_side=optional && server_side=unsupported` 作为客户端专用候选 `backend/app/services/mod_decider.py`
+- [ ] T104 [US1] 保留服务端安全覆盖：`server_side=required/optional` 判定为 `keep_server`，与客户端候选冲突时输出 `needs_review` `backend/app/services/mod_decider.py`
+- [ ] T105 [US1] 在生成流程中对本地 jar、CurseForge 下载 jar 和缺失 project id 的 jar 执行 hash lookup `backend/app/services/server_generator.py`
+- [ ] T106 [P] [US1] 为 Jade、Xaero、Tweakerge、未知 jar 的 Modrinth 字段合并行为补充单元测试 `backend/tests/unit/test_mod_decider.py`
+
+### 第五批实现：Mixin 启发式弱证据
+
+- [ ] T107 [P] [US1] 为根目录 `*.mixins.json` 提取和 client-only 启发式创建单元测试 `backend/tests/unit/test_mixin_heuristic.py`
+- [ ] T108 [US1] 实现 Mixin 配置读取服务，提取 `client`、`mixins`、`server` 条目数量 `backend/app/services/mixin_metadata.py`
+- [ ] T109 [US1] 将 Mixin 启发式接入端侧判定器，作为低优先级弱证据 `backend/app/services/mod_decider.py`
+- [ ] T110 [US1] 在 `MOD_DECISIONS.md` 中展示 Mixin 证据来源、置信度和“不覆盖强证据”的说明 `backend/app/services/server_generator.py`
+
+### 第六批实现：本地规则自扩展
+
+- [ ] T111 [US1] 设计候选规则数据结构和本地保存路径 `data/rules/local_mod_side_rule_candidates.json`
+- [ ] T112 [US1] 从启动验证失败日志生成候选规则，不自动启用 `backend/app/services/verification_runner.py`
+- [ ] T113 [US1] 提供确认后写入 `data/rules/local_mod_side_rules.json` 的服务层接口 `backend/app/services/mod_side_rule_store.py`
+- [ ] T114 [US1] 在报告中展示候选规则和确认前风险说明 `backend/app/services/server_generator.py`

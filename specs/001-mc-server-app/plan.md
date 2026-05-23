@@ -205,8 +205,30 @@ data/
    `client_side/server_side`；整合包 manifest 中能关联的平台项目和文件信息必须作为证据记录。
 2. **jar 内元数据**：`fabric.mod.json`、`quilt.mod.json`、`META-INF/mods.toml`、
    `META-INF/neoforge.mods.toml`。Fabric/Quilt 的 `environment=client` 可作为客户端专用强证据。
-3. **MCMod 运行环境信息**：通过缓存 provider 读取“客户端/服务端安装需求”，不可用时降级。
-4. **本地维护规则**：内置结构化规则和 `data/rules/local_mod_side_rules.json` 用户确认规则。
+3. **Modrinth hash lookup**：对已下载或本地已有 jar 计算 SHA1，通过
+   `POST /v2/version_files` 反查 Modrinth 项目，再读取 `client_side/server_side`；
+   该证据用于补足没有 manifest 项目标识、CurseForge 下载文件和用户直接放入 `mods/` 的 jar。
+4. **MCMod 运行环境信息**：通过缓存 provider 读取“客户端/服务端安装需求”，不可用时降级。
+5. **Mixin 启发式**：读取根目录 `*.mixins.json`，当只有 `client` mixin 且没有 common
+   `mixins` 时，作为低优先级客户端倾向证据；不得单独覆盖明确平台或 MCMod 服务端证据。
+6. **本地维护规则**：内置结构化规则和 `data/rules/local_mod_side_rules.json` 用户确认规则。
+
+**Modrinth 端侧规则**:
+
+- 采用 DeEarthX `ModrinthFilter` 的客户端判断语义：`client_side=required`
+  或 `client_side=optional` 且 `server_side=unsupported` 时，判定为客户端专用候选。
+- 为了服务端生成安全性，本项目额外保留服务端强证据：`server_side=required` 或
+  `server_side=optional` 时判定为 `keep_server`，并在与客户端规则冲突时输出
+  `needs_review`，默认保留 mod。
+
+**MCMod provider 与 DeepSeek 取舍**:
+
+- MCMod provider 第一版只解析结构化运行环境文本，映射到
+  `服务端需装`、`服务端可选`、`服务端无效`、`客户端需装`、`客户端可选`、`客户端无效`。
+- DeepSeek 不作为默认判定器接入端侧决策。只有当 MCMod 页面存在多义文本、候选搜索结果
+  无法稳定匹配，或多个证据冲突需要生成中文解释时，才作为可选辅助解释器使用。
+- DeepSeek 输出不得直接成为强证据；它只能生成 `needs_review` 说明或候选规则建议，
+  必须保留原始 MCMod/平台/jar 证据引用。
 
 **交付分层**:
 
@@ -214,11 +236,16 @@ data/
   Xaero's World Map、Tweakerge、Tweakeroo 等规则。
 - 第二批实现：接入 CurseForge 和 Modrinth 平台元数据；当两者都有证据时，
   CurseForge 优先级高于 Modrinth。
-- 第三批实现：实现 MCMod provider、缓存和不可用降级。
-- 第四批实现：从启动失败日志或用户确认操作生成候选规则，并提供确认后写入本地规则的入口。
+- 第三批实现：实现 MCMod provider、缓存和不可用降级，并评估 DeepSeek 仅作为
+  解释/歧义辅助，不进入默认强判定链。
+- 第四批实现：实现 Modrinth hash lookup，覆盖没有 manifest 项目标识的本地 jar。
+- 第五批实现：实现 Mixin 启发式，作为低优先级弱证据补充。
+- 第六批实现：从启动失败日志或用户确认操作生成候选规则，并提供确认后写入本地规则的入口。
 
 **风险与约束**:
 
 - 端侧误判会影响服务端可运行性，因此所有弱证据默认保留，不自动删除。
 - MCMod 只能作为辅助证据，页面结构变化或访问失败不能阻塞生成。
+- DeepSeek 可能产生幻觉或过度解释，不能替代可追溯来源证据。
+- Mixin 启发式容易误伤同时包含客户端显示和服务端逻辑的 mod，只能作为低置信度证据。
 - 本地自扩展规则必须保留用户确认边界，避免系统偷偷学习出破坏性规则。

@@ -117,6 +117,80 @@ Tweakerge、Tweakeroo 等明显客户端工具类 mod 被保留到服务端的�
 - 启动验证失败后再反复试错移除 mod：可能更准，但速度慢、对用户反馈差。
 - 完全依赖 MCMod：中文资料有价值，但页面结构和可访问性不稳定，不能作为唯一来源。
 
+## 决策：MCMod provider 作为可缓存参考源，DeepSeek 只做可选歧义辅助
+
+**理由**: `mcmod-classifier` 的实现证明 MCMod “运行环境”字段对中文生态的 mod
+端侧判断很有价值。它通过文件名提取搜索关键词，访问 `https://search.mcmod.cn/s`，
+进入第一个搜索结果页面后读取运行环境文本，并按 `服务端需装`、`客户端需装`、
+`服务端无效`、`客户端无效`、`服务端可选`、`客户端可选` 分类。
+
+本项目不能直接照搬“第一个搜索结果即可信”的策略。MCMod 页面结构、搜索结果质量和
+反爬限制都会影响稳定性，因此 provider 必须缓存响应、记录页面 URL 和命中关键词，
+并在无法确认唯一候选时返回 `needs_review` 或无证据。
+
+DeepSeek 暂不接入默认判定链。它适合处理候选歧义、中文页面摘要和冲突说明，但不适合
+直接决定是否删除/隔离 mod。只有在 MCMod 多候选、页面文本无法规则化解析或证据冲突
+需要生成中文解释时，才允许把 DeepSeek 作为可选辅助，并保留原始证据引用。
+
+**备选方案**:
+
+- 完全不用 MCMod：会丢失中文生态里大量有用的“运行环境”人工整理信息。
+- 直接把 DeepSeek 作为判定器：实现看似灵活，但不可复现且容易幻觉，不符合证据链原则。
+- 照搬 `mcmod-classifier` 单结果分类：速度快，但误匹配风险较高，且缺少缓存和证据报告。
+
+## 决策：增加 Modrinth hash lookup 补足缺失平台标识
+
+**理由**: DeEarthX 的 `HashFilter` 使用 jar 的 SHA1 调用 Modrinth
+`POST /v2/version_files`，再按项目 `client_side/server_side` 判断客户端专用 mod。
+这能覆盖三类当前容易缺证据的情况：用户上传普通 zip 内直接带 jar、CurseForge
+manifest 下载后没有 Modrinth project id、以及文件名被中文启动器重命名的 jar。
+
+本项目将 hash lookup 作为平台证据补充：命中后读取 Modrinth 项目的
+`client_side/server_side`，并复用统一合并逻辑。hash 查询结果写入本地缓存，测试使用
+fixture，避免依赖实时网络。
+
+**备选方案**:
+
+- 只依赖 `.mrpack` 下载 URL 提取 project id：对非 Modrinth 包和重命名 jar 覆盖不足。
+- 只用文件名搜索 Modrinth：易受中文名、版本号和 fork 名称影响，误匹配风险高。
+- 每个 jar 单独请求项目：简单但慢；hash 应批量查询并缓存。
+
+## 决策：采用 DeEarthX 的 Modrinth 客户端判断语义，但保留服务端安全覆盖
+
+**理由**: DeEarthX `ModrinthFilter` 将以下情况识别为客户端 mod：
+
+- `client_side=required`
+- `client_side=optional` 且 `server_side=unsupported`
+
+这个策略比只判断 `server_side=unsupported` 更激进，能识别更多 UI、渲染、地图和输入类
+mod。但本项目目标是“生成可运行服务端”，误删服务端可选或双端 mod 的代价更高，因此
+在采用该客户端判断语义的同时，必须额外处理服务端侧：
+
+- `server_side=required` 或 `server_side=optional` 时，优先保留为 `keep_server`。
+- 当客户端规则与服务端保留规则冲突时，标记 `needs_review`，默认保留。
+- 报告必须说明具体字段值，而不是只显示“Modrinth 判断为客户端”。
+
+**备选方案**:
+
+- 完全照搬 DeEarthX：更容易过滤掉客户端 mod，但可能把 Jade 这类服务端可选 mod 隔离。
+- 保持当前保守策略：安全但可能漏掉 `client_side=required` 的客户端强依赖 mod。
+
+## 决策：Mixin 启发式只作为低优先级弱证据
+
+**理由**: DeEarthX `MixinFilter` 的核心规则是：根目录 mixin 配置没有 common
+`mixins`，但存在 `client` mixin，且文件名不包含 `lib`，则认为该 jar 倾向客户端专用。
+这对渲染、HUD、小地图、键位输入类 mod 很有帮助，也能在平台元数据缺失时提供线索。
+
+但 mixin 结构不是安装端侧声明。部分双端 mod 可能只有客户端 mixin 用于显示增强，同时
+服务端仍可安全加载或需要保留。因此本项目将 Mixin 结果作为低置信度证据，只能在没有
+平台、jar、MCMod 强证据时推动 `needs_review` 或低置信度 `disable_client_only`，
+并允许本地规则或用户确认覆盖。
+
+**备选方案**:
+
+- 不读取 mixin：少一个自动发现客户端工具类 mod 的线索。
+- 把 mixin 当强证据：过滤效果更明显，但误伤风险高。
+
 ## 决策：本地端侧规则采用“内置规则 + 用户确认规则”双层存储
 
 **理由**: 内置规则覆盖常见客户端专用 mod；用户在实际使用中确认的新规则写入

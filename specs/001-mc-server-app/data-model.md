@@ -111,19 +111,91 @@ failed -> expired
 
 字段：
 
-- `source`: `platform_metadata`、`jar_metadata`、`mcmod`、`builtin_rule`、`local_rule`。
+- `source`: `curseforge_metadata`、`modrinth_metadata`、`modrinth_hash`、`jar_metadata`、
+  `mcmod`、`mixin_heuristic`、`builtin_rule`、`local_rule`、`deepseek_assist`。
 - `decision`: `keep_server`、`disable_client_only`、`keep_unknown`、`needs_review`。
 - `confidence`: 0 到 1 的置信度。
 - `summary`: 中文证据摘要。
 - `raw_ref`: 平台项目、jar 内文件路径、MCMod 页面 URL 或规则文件路径。
+- `raw_fields`: 原始关键字段快照，例如 Modrinth `client_side/server_side`、MCMod
+  `服务端需装/服务端无效`、mixin 配置中的 `client/mixins/server` 数量。
+- `cache_key`: 来源缓存键；没有缓存时为空。
 - `created_at`: 证据创建或读取时间。
 
 合并规则：
 
 - CurseForge 平台元数据优先于 Modrinth 平台元数据；平台元数据整体优先于 jar 元数据。
+- Modrinth manifest/project id 证据优先于 Modrinth hash lookup；hash lookup 只补足缺失平台标识。
 - jar 元数据优先于 MCMod。
-- MCMod 优先于本地规则。
+- MCMod 优先于 Mixin 启发式和本地规则。
+- Mixin 启发式为低优先级弱证据，不得覆盖明确服务端可用证据。
+- DeepSeek 只允许作为 `needs_review` 解释或候选规则建议，不得直接产生强制隔离结论。
 - 证据冲突时保留 mod，决策为 `needs_review` 或 `keep_unknown`，并在报告中列出冲突。
+
+## MCMod 缓存记录 MCModCacheEntry
+
+表示从 MCMod 检索和解析出的运行环境参考信息。
+
+字段：
+
+- `cache_key`: 由规范化查询词、mod id 或文件名生成的缓存键。
+- `query`: 实际搜索关键词。
+- `matched_url`: 命中的 MCMod 模组页 URL。
+- `matched_title`: 命中的模组标题。
+- `run_environment_text`: 原始运行环境文本。
+- `client_requirement`: `required`、`optional`、`unsupported`、`unknown`。
+- `server_requirement`: `required`、`optional`、`unsupported`、`unknown`。
+- `confidence`: 候选匹配和字段解析综合置信度。
+- `fetched_at`: 抓取时间。
+- `expires_at`: 缓存过期时间。
+- `error`: 检索失败、页面不可解析或未收录时的中文说明。
+
+验证规则：
+
+- MCMod 页面不可用、限流或未收录时，必须返回无证据并记录可读原因，不得中断生成。
+- 搜索结果存在多个候选且无法唯一确认时，必须返回 `needs_review` 或无证据。
+- MCMod 证据必须在报告中展示页面 URL、运行环境原文摘要和缓存时间。
+
+## Modrinth hash lookup 记录 ModrinthHashLookup
+
+表示通过 jar SHA1 反查 Modrinth 项目的缓存结果。
+
+字段：
+
+- `sha1`: jar 文件 SHA1。
+- `filename`: 查询时的 jar 文件名。
+- `project_id`: Modrinth 项目 id。
+- `version_id`: Modrinth 文件版本 id。
+- `client_side`: Modrinth 项目端侧字段。
+- `server_side`: Modrinth 项目端侧字段。
+- `queried_at`: 查询时间。
+- `expires_at`: 缓存过期时间。
+- `error`: 未命中或请求失败时的中文说明。
+
+验证规则：
+
+- hash lookup 必须批量查询并缓存，避免对每个 jar 单独请求。
+- hash 未命中不能降低原有证据置信度，只能作为“未获得平台证据”记录。
+- 查询结果必须通过统一端侧合并逻辑产生 `ModSideEvidence`。
+
+## Mixin 启发式记录 MixinHeuristicEvidence
+
+表示从 jar 根目录 mixin 配置推断出的弱端侧线索。
+
+字段：
+
+- `filename`: jar 文件名。
+- `mixin_files`: 参与判断的根目录 `*.mixins.json` 文件名。
+- `client_entries`: `client` mixin 条目数量。
+- `common_entries`: `mixins` 条目数量。
+- `server_entries`: `server` 条目数量。
+- `decision`: `needs_review` 或低置信度 `disable_client_only`。
+- `reason`: 中文说明。
+
+验证规则：
+
+- 只有存在 `client` 条目、没有 common `mixins` 条目，且文件名不明显为库文件时，才能生成客户端倾向证据。
+- 该证据不得覆盖平台、jar 元数据或 MCMod 的明确服务端可用结论。
 
 ## 本地端侧规则 LocalModSideRule
 
