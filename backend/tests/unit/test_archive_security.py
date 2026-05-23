@@ -59,7 +59,9 @@ def test_reads_modrinth_remote_mod_files(tmp_path):
                         "files": [
                             {
                                 "path": "mods/remote-lib.jar",
-                                "downloads": ["https://example.test/remote-lib.jar"],
+                                "downloads": [
+                                    "https://cdn.modrinth.com/data/abc123/versions/def456/remote-lib.jar"
+                                ],
                                 "hashes": {"sha1": "abc123"},
                             },
                             {
@@ -78,7 +80,11 @@ def test_reads_modrinth_remote_mod_files(tmp_path):
     assert len(result.remote_mod_files) == 1
     remote_file = result.remote_mod_files[0]
     assert remote_file.path == "mods/remote-lib.jar"
-    assert remote_file.downloads == ["https://example.test/remote-lib.jar"]
+    assert remote_file.source == "modrinth"
+    assert remote_file.project_id == "abc123"
+    assert remote_file.downloads == [
+        "https://cdn.modrinth.com/data/abc123/versions/def456/remote-lib.jar"
+    ]
     assert remote_file.hashes == {"sha1": "abc123"}
 
 

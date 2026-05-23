@@ -26,6 +26,16 @@ class ModSideDecision:
     mod_id: str | None = None
 
 
+@dataclass(frozen=True)
+class PlatformModSideEvidence:
+    source: str
+    decision: str
+    confidence: float
+    reason: str
+    matched_rule: str | None = None
+    mod_id: str | None = None
+
+
 def load_mod_side_rules(local_rules_path: Path | None = None) -> list[ModSideRule]:
     return [
         *load_builtin_mod_side_rules(),
@@ -48,8 +58,13 @@ def decide_mod_side_detailed(
     *,
     metadata: ModJarMetadata | None = None,
     jar_path: Path | None = None,
+    platform_evidence: list[PlatformModSideEvidence] | None = None,
     local_rules_path: Path | None = None,
 ) -> ModSideDecision:
+    platform_decision = _decision_from_platform_evidence(platform_evidence or [])
+    if platform_decision is not None:
+        return platform_decision
+
     metadata = metadata or (read_mod_metadata(jar_path) if jar_path else None)
     metadata_decision = _decision_from_metadata(metadata)
     if metadata_decision is not None:
@@ -82,6 +97,58 @@ def decide_mod_side(mod_id_or_filename: str) -> tuple[str, float, str]:
     return decision.decision, decision.confidence, decision.reason
 
 
+def platform_identity_evidence(
+    *,
+    source: str,
+    identifiers: list[str | None],
+    reason_prefix: str,
+    local_rules_path: Path | None = None,
+) -> PlatformModSideEvidence | None:
+    target_values = [value.lower() for value in identifiers if isinstance(value, str) and value]
+    for rule in load_mod_side_rules(local_rules_path):
+        matched = _first_matching_rule_value(rule, target_values)
+        if matched:
+            return PlatformModSideEvidence(
+                source=source,
+                decision=rule.decision,
+                confidence=min(rule.confidence, 0.9),
+                reason=f"{reason_prefix} 命中端侧规则：{matched}；{rule.reason}",
+                matched_rule=matched,
+            )
+    return None
+
+
+def modrinth_project_evidence(project: dict) -> PlatformModSideEvidence | None:
+    client_side = str(project.get("client_side") or "").lower()
+    server_side = str(project.get("server_side") or "").lower()
+    project_id = project.get("id") or project.get("slug")
+    if server_side == "unsupported" and client_side in {"required", "optional"}:
+        return PlatformModSideEvidence(
+            source="modrinth_metadata",
+            decision="disable_client_only",
+            confidence=0.96,
+            reason=f"Modrinth 项目元数据标记 client_side={client_side}, server_side={server_side}",
+            mod_id=str(project_id) if project_id else None,
+        )
+    if server_side in {"required", "optional"}:
+        return PlatformModSideEvidence(
+            source="modrinth_metadata",
+            decision="keep_server",
+            confidence=0.9,
+            reason=f"Modrinth 项目元数据标记 server_side={server_side}",
+            mod_id=str(project_id) if project_id else None,
+        )
+    return platform_identity_evidence(
+        source="modrinth_metadata",
+        identifiers=[
+            _string_or_none(project.get("slug")),
+            _string_or_none(project.get("title")),
+            _string_or_none(project.get("description")),
+        ],
+        reason_prefix="Modrinth 项目元数据",
+    )
+
+
 def _decision_from_metadata(metadata: ModJarMetadata | None) -> ModSideDecision | None:
     if metadata is None or metadata.environment is None:
         return None
@@ -104,6 +171,36 @@ def _decision_from_metadata(metadata: ModJarMetadata | None) -> ModSideDecision 
     return None
 
 
+def _decision_from_platform_evidence(
+    platform_evidence: list[PlatformModSideEvidence],
+) -> ModSideDecision | None:
+    useful_evidence = [
+        evidence
+        for evidence in platform_evidence
+        if evidence.decision in {"keep_server", "disable_client_only", "needs_review"}
+    ]
+    if not useful_evidence:
+        return None
+    useful_evidence.sort(key=lambda evidence: _platform_source_priority(evidence.source))
+    selected = useful_evidence[0]
+    return ModSideDecision(
+        decision=selected.decision,
+        confidence=selected.confidence,
+        reason=selected.reason,
+        evidence_source=selected.source,
+        matched_rule=selected.matched_rule,
+        mod_id=selected.mod_id,
+    )
+
+
+def _platform_source_priority(source: str) -> int:
+    priorities = {
+        "curseforge_metadata": 0,
+        "modrinth_metadata": 1,
+    }
+    return priorities.get(source, 10)
+
+
 def _target_values(mod_id_or_filename: str, metadata: ModJarMetadata | None) -> list[str]:
     values = [mod_id_or_filename.lower()]
     if metadata:
@@ -120,6 +217,10 @@ def _first_matching_rule_value(rule: ModSideRule, target_values: Iterable[str]) 
             if matcher and matcher in target:
                 return matcher
     return None
+
+
+def _string_or_none(value: object) -> str | None:
+    return value if isinstance(value, str) and value else None
 
 
 def _read_rules(path: Path, *, source: str) -> list[ModSideRule]:

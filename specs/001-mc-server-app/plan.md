@@ -201,8 +201,8 @@ data/
 
 **证据优先级**:
 
-1. **平台元数据**：Modrinth `client_side/server_side`、CurseForge 项目/文件元数据、
-   整合包 manifest 中能关联的平台项目和文件信息。
+1. **平台元数据**：CurseForge 项目/文件元数据优先，其次是 Modrinth
+   `client_side/server_side`；整合包 manifest 中能关联的平台项目和文件信息必须作为证据记录。
 2. **jar 内元数据**：`fabric.mod.json`、`quilt.mod.json`、`META-INF/mods.toml`、
    `META-INF/neoforge.mods.toml`。Fabric/Quilt 的 `environment=client` 可作为客户端专用强证据。
 3. **MCMod 运行环境信息**：通过缓存 provider 读取“客户端/服务端安装需求”，不可用时降级。
@@ -212,7 +212,8 @@ data/
 
 - 第一批实现：结构化本地规则、Fabric/Quilt jar 元数据、决策报告落盘，补齐
   Xaero's World Map、Tweakerge、Tweakeroo 等规则。
-- 第二批实现：把 Modrinth manifest 下载项与平台项目元数据关联，接入平台端侧字段。
+- 第二批实现：接入 CurseForge 和 Modrinth 平台元数据；当两者都有证据时，
+  CurseForge 优先级高于 Modrinth。
 - 第三批实现：实现 MCMod provider、缓存和不可用降级。
 - 第四批实现：从启动失败日志或用户确认操作生成候选规则，并提供确认后写入本地规则的入口。
 

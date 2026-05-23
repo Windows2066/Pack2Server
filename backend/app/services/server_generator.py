@@ -2,7 +2,7 @@ import hashlib
 import shutil
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Callable
 
@@ -10,7 +10,13 @@ import httpx
 
 from app.core.config import get_settings
 from app.services.archive_analyzer import ArchiveAnalysis, ArchiveSecurityError, RemoteModFile
-from app.services.mod_decider import ModSideDecision, decide_mod_side_detailed
+from app.services.mod_decider import (
+    ModSideDecision,
+    PlatformModSideEvidence,
+    decide_mod_side_detailed,
+    modrinth_project_evidence,
+    platform_identity_evidence,
+)
 from app.services.verification_runner import VerificationResult
 
 
@@ -35,6 +41,7 @@ class GeneratedServerArtifact:
 class RemoteFetchResult:
     content: bytes
     file_name: str | None = None
+    platform_evidence: list[PlatformModSideEvidence] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -42,6 +49,7 @@ class DownloadedRemoteMod:
     remote_file: RemoteModFile
     content: bytes
     file_name: str
+    platform_evidence: list[PlatformModSideEvidence] = field(default_factory=list)
 
 
 class RemoteModDownloadError(RuntimeError):
@@ -127,7 +135,11 @@ def build_runnable_server_artifact(
         temp_target = temp_mod_dir / file_name
         temp_target.parent.mkdir(parents=True, exist_ok=True)
         temp_target.write_bytes(content)
-        decision = decide_mod_side_detailed(file_name, jar_path=temp_target)
+        decision = decide_mod_side_detailed(
+            file_name,
+            jar_path=temp_target,
+            platform_evidence=downloaded.platform_evidence,
+        )
         target = _target_for_mod_decision(workspace_path, file_name, decision)
         _move_file(temp_target, target)
         copied_mod_names.add(file_name)
@@ -197,7 +209,12 @@ def _download_one_remote_mod(
     _assert_safe_file_name(file_name)
     _verify_remote_mod_hash(remote_file, content)
 
-    return DownloadedRemoteMod(remote_file=remote_file, content=content, file_name=file_name)
+    return DownloadedRemoteMod(
+        remote_file=remote_file,
+        content=content,
+        file_name=file_name,
+        platform_evidence=fetched.platform_evidence if isinstance(fetched, RemoteFetchResult) else [],
+    )
 
 
 def _target_for_mod_decision(
@@ -319,7 +336,10 @@ def _fetch_remote_mod_file(remote_file: RemoteModFile) -> RemoteFetchResult:
         try:
             response = httpx.get(url, follow_redirects=True, timeout=60.0)
             response.raise_for_status()
-            return RemoteFetchResult(content=response.content)
+            return RemoteFetchResult(
+                content=response.content,
+                platform_evidence=_fetch_modrinth_platform_evidence(remote_file),
+            )
         except httpx.HTTPError as exc:
             errors.append(f"{url}: {exc}")
 
@@ -347,6 +367,8 @@ def _fetch_curseforge_mod_file(remote_file: RemoteModFile) -> RemoteFetchResult:
         file_name = file_info.get("fileName") or f"{remote_file.project_id}-{remote_file.file_id}.jar"
         _assert_safe_file_name(file_name)
 
+        mod_info = _fetch_curseforge_mod_info(client, remote_file)
+
         download_url = file_info.get("downloadUrl")
         if not download_url:
             url_response = client.get(
@@ -362,7 +384,58 @@ def _fetch_curseforge_mod_file(remote_file: RemoteModFile) -> RemoteFetchResult:
 
     response = httpx.get(download_url, follow_redirects=True, timeout=60.0)
     response.raise_for_status()
-    return RemoteFetchResult(content=response.content, file_name=file_name)
+    evidence = _curseforge_platform_evidence(file_name, mod_info)
+    return RemoteFetchResult(
+        content=response.content,
+        file_name=file_name,
+        platform_evidence=[evidence] if evidence else [],
+    )
+
+
+def _fetch_modrinth_platform_evidence(remote_file: RemoteModFile) -> list[PlatformModSideEvidence]:
+    if remote_file.source != "modrinth" or not remote_file.project_id:
+        return []
+    try:
+        response = httpx.get(
+            f"https://api.modrinth.com/v2/project/{remote_file.project_id}",
+            headers={"User-Agent": "opc-mc-server-pack-builder/0.1"},
+            timeout=10.0,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError:
+        return []
+    evidence = modrinth_project_evidence(response.json())
+    return [evidence] if evidence else []
+
+
+def _curseforge_platform_evidence(
+    file_name: str,
+    mod_info: dict,
+) -> PlatformModSideEvidence | None:
+    return platform_identity_evidence(
+        source="curseforge_metadata",
+        identifiers=[
+            file_name,
+            _string_or_none(mod_info.get("slug")),
+            _string_or_none(mod_info.get("name")),
+            _string_or_none(mod_info.get("summary")),
+        ],
+        reason_prefix="CurseForge 项目元数据",
+    )
+
+
+def _string_or_none(value: object) -> str | None:
+    return value if isinstance(value, str) and value else None
+
+
+def _fetch_curseforge_mod_info(client: httpx.Client, remote_file: RemoteModFile) -> dict:
+    try:
+        response = client.get(f"/v1/mods/{remote_file.project_id}")
+        response.raise_for_status()
+    except httpx.HTTPError:
+        return {}
+    data = response.json().get("data", {})
+    return data if isinstance(data, dict) else {}
 
 
 def _verify_remote_mod_hash(remote_file: RemoteModFile, content: bytes) -> None:

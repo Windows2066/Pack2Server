@@ -1,6 +1,6 @@
 import json
 
-from app.services.mod_decider import decide_mod_side_detailed
+from app.services.mod_decider import PlatformModSideEvidence, decide_mod_side_detailed
 from app.services.mod_metadata import ModJarMetadata
 
 
@@ -38,6 +38,30 @@ def test_jar_metadata_takes_priority_over_local_rules(tmp_path):
 
     assert decision.decision == "disable_client_only"
     assert decision.evidence_source == "jar_metadata"
+
+
+def test_curseforge_platform_metadata_has_priority_over_modrinth_and_jar_metadata():
+    decision = decide_mod_side_detailed(
+        "client-env-mod.jar",
+        metadata=ModJarMetadata(mod_id="client-env-mod", environment="client"),
+        platform_evidence=[
+            PlatformModSideEvidence(
+                source="modrinth_metadata",
+                decision="disable_client_only",
+                confidence=0.96,
+                reason="Modrinth 标记 server_side=unsupported",
+            ),
+            PlatformModSideEvidence(
+                source="curseforge_metadata",
+                decision="keep_server",
+                confidence=0.9,
+                reason="CurseForge 项目元数据命中服务端保留规则",
+            ),
+        ],
+    )
+
+    assert decision.decision == "keep_server"
+    assert decision.evidence_source == "curseforge_metadata"
 
 
 def test_reads_user_confirmed_local_rules(tmp_path):

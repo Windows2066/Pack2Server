@@ -14,7 +14,7 @@ class RemoteModFile:
     downloads: list[str] = field(default_factory=list)
     hashes: dict[str, str] = field(default_factory=dict)
     source: str = "direct"
-    project_id: int | None = None
+    project_id: int | str | None = None
     file_id: int | None = None
     required: bool = True
 
@@ -99,7 +99,15 @@ def _remote_mod_files_from_modrinth(data: dict) -> list[RemoteModFile]:
             hashes = {}
         hashes = {str(key): str(value) for key, value in hashes.items()}
 
-        remote_files.append(RemoteModFile(path=path, downloads=downloads, hashes=hashes))
+        remote_files.append(
+            RemoteModFile(
+                path=path,
+                downloads=downloads,
+                hashes=hashes,
+                source="modrinth",
+                project_id=_modrinth_project_id_from_downloads(downloads),
+            )
+        )
 
     return remote_files
 
@@ -135,4 +143,16 @@ def _coerce_int(value: object) -> int | None:
         return value
     if isinstance(value, str) and value.isdigit():
         return int(value)
+    return None
+
+
+def _modrinth_project_id_from_downloads(downloads: list[str]) -> str | None:
+    for url in downloads:
+        marker = "/data/"
+        if marker not in url:
+            continue
+        tail = url.split(marker, 1)[1]
+        project_id = tail.split("/", 1)[0]
+        if project_id:
+            return project_id
     return None

@@ -291,9 +291,9 @@ T060 结果报告组件
 
 ### 第二批实现：平台元数据
 
-- [ ] T091 [US1] 扩展 Modrinth manifest 远程文件模型，保留项目标识和可用于查询端侧的元数据 `backend/app/services/archive_analyzer.py`
-- [ ] T092 [US1] 实现 Modrinth 项目端侧 metadata 查询和 fixture 测试 `backend/app/sources/modrinth.py`
-- [ ] T093 [US1] 在生成流程中优先应用平台端侧证据 `backend/app/services/server_generator.py`
+- [x] T091 [US1] 扩展 Modrinth manifest 远程文件模型，保留项目标识和可用于查询端侧的元数据 `backend/app/services/archive_analyzer.py`
+- [x] T092 [US1] 实现 CurseForge 与 Modrinth 平台端侧 metadata 查询和 fixture 测试 `backend/app/services/server_generator.py`
+- [x] T093 [US1] 在生成流程中优先应用平台端侧证据，且 CurseForge 优先级高于 Modrinth `backend/app/services/mod_decider.py`
 
 ### 第三批实现：MCMod 参考源
 

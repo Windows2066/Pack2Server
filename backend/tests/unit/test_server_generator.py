@@ -8,6 +8,7 @@ import pytest
 
 from app.core.config import get_settings
 from app.services.archive_analyzer import ArchiveAnalysis, RemoteModFile
+from app.services.mod_decider import PlatformModSideEvidence
 from app.services.server_generator import (
     RemoteFetchResult,
     RemoteModDownloadError,
@@ -153,6 +154,60 @@ def test_build_runnable_server_artifact_downloads_modrinth_remote_mods(tmp_path)
 
     assert "mods/remote-lib.jar" in names
     assert "_disabled_client_mods/journeymap-client.jar" in names
+
+
+def test_build_runnable_server_artifact_uses_platform_metadata_before_jar_metadata(tmp_path):
+    upload_archive = tmp_path / "pack.mrpack"
+    with zipfile.ZipFile(upload_archive, "w") as archive:
+        archive.writestr("modrinth.index.json", "{}")
+
+    jar_content = _jar_bytes(
+        {
+            "id": "platform-kept-mod",
+            "version": "1.0.0",
+            "environment": "client",
+        }
+    )
+
+    artifact = build_runnable_server_artifact(
+        task_id="task-platform-priority",
+        upload_archive=upload_archive,
+        workspace_root=tmp_path / "workspaces",
+        artifact_root=tmp_path / "artifacts",
+        analysis=ArchiveAnalysis(
+            pack_name="platform pack",
+            pack_version="1.0.0",
+            minecraft_version="1.20.1",
+            loader="fabric",
+            mod_files=[],
+            remote_mod_files=[
+                RemoteModFile(
+                    path="mods/platform-kept-mod.jar",
+                    source="modrinth",
+                    project_id="abc123",
+                    downloads=["https://cdn.modrinth.com/data/abc123/versions/def456/platform-kept-mod.jar"],
+                )
+            ],
+        ),
+        remote_fetcher=lambda _remote_file: RemoteFetchResult(
+            content=jar_content,
+            file_name="platform-kept-mod.jar",
+            platform_evidence=[
+                PlatformModSideEvidence(
+                    source="modrinth_metadata",
+                    decision="keep_server",
+                    confidence=0.9,
+                    reason="Modrinth 标记 server_side=required",
+                )
+            ],
+        ),
+    )
+
+    report = (artifact.workspace_path / "MOD_DECISIONS.md").read_text(encoding="utf-8")
+
+    assert (artifact.workspace_path / "mods" / "platform-kept-mod.jar").exists()
+    assert "modrinth_metadata" in report
+    assert "keep_server" in report
 
 
 def test_build_runnable_server_artifact_downloads_remote_mods_concurrently(tmp_path):

@@ -100,8 +100,8 @@ Tweakerge、Tweakeroo 等明显客户端工具类 mod 被保留到服务端的�
 
 **判定优先级**:
 
-1. 平台元数据：优先读取 Modrinth 的 `client_side` / `server_side`，以及
-   CurseForge、整合包 manifest 能提供的项目和文件信息。
+1. 平台元数据：优先读取 CurseForge 项目/文件元数据，其次读取 Modrinth 的
+   `client_side` / `server_side`；当两者都能提供证据时，CurseForge 优先。
 2. jar 内元数据：读取 `fabric.mod.json`、`quilt.mod.json`、`META-INF/mods.toml`
    和 `META-INF/neoforge.mods.toml`，优先使用明确的 `environment`。
 3. MCMod 运行环境信息：作为外部参考源，结果必须缓存到本地；来源不可用时不得阻塞生成。

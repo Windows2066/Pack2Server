@@ -120,7 +120,7 @@ failed -> expired
 
 合并规则：
 
-- 平台元数据优先于 jar 元数据。
+- CurseForge 平台元数据优先于 Modrinth 平台元数据；平台元数据整体优先于 jar 元数据。
 - jar 元数据优先于 MCMod。
 - MCMod 优先于本地规则。
 - 证据冲突时保留 mod，决策为 `needs_review` 或 `keep_unknown`，并在报告中列出冲突。
