@@ -101,6 +101,50 @@ failed -> expired
 - `confidence`: 0 到 1 的置信度。
 - `reason`: 中文说明。
 - `evidence_ids`: 关联证据。
+- `evidence_source`: 当前主导决策的证据来源，包含 `platform_metadata`、`jar_metadata`、
+  `mcmod`、`builtin_rule`、`local_rule`、`unknown`。
+- `matched_rule`: 命中的本地规则标识，未命中时为空。
+
+## mod 端侧证据 ModSideEvidence
+
+表示某个来源对 mod 安装端侧的判断。
+
+字段：
+
+- `source`: `platform_metadata`、`jar_metadata`、`mcmod`、`builtin_rule`、`local_rule`。
+- `decision`: `keep_server`、`disable_client_only`、`keep_unknown`、`needs_review`。
+- `confidence`: 0 到 1 的置信度。
+- `summary`: 中文证据摘要。
+- `raw_ref`: 平台项目、jar 内文件路径、MCMod 页面 URL 或规则文件路径。
+- `created_at`: 证据创建或读取时间。
+
+合并规则：
+
+- 平台元数据优先于 jar 元数据。
+- jar 元数据优先于 MCMod。
+- MCMod 优先于本地规则。
+- 证据冲突时保留 mod，决策为 `needs_review` 或 `keep_unknown`，并在报告中列出冲突。
+
+## 本地端侧规则 LocalModSideRule
+
+表示用户确认或系统内置的端侧兜底规则。
+
+字段：
+
+- `match`: 文件名、mod id 或 slug 片段列表。
+- `decision`: `disable_client_only`、`keep_server` 或 `needs_review`。
+- `confidence`: 规则置信度。
+- `reason`: 中文原因。
+- `source`: `builtin_rule` 或 `local_rule`。
+- `created_at`: 本地规则创建时间，内置规则可为空。
+- `hit_count`: 命中次数，用于后续清理和排序。
+- `last_confirmed_at`: 用户最后确认时间，内置规则可为空。
+
+验证规则：
+
+- 本地规则不得直接覆盖更高优先级的明确平台元数据。
+- 自动生成的候选规则必须由用户确认后才能写入 `data/rules/local_mod_side_rules.json`。
+- 规则文件损坏时必须忽略本地规则并返回中文警告，不得中断服务端生成。
 
 ## 证据记录 EvidenceRecord
 

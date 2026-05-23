@@ -193,3 +193,31 @@ data/
 ## 复杂性跟踪
 
 无宪法违反项。
+
+## 增量设计：mod 端侧证据链判定器
+
+**目标**: 替换当前仅按文件名命中客户端规则的粗略实现，生成服务端时按证据优先级
+判断每个 mod 应保留、隔离或标记不确定，并在用户可见报告中解释原因。
+
+**证据优先级**:
+
+1. **平台元数据**：Modrinth `client_side/server_side`、CurseForge 项目/文件元数据、
+   整合包 manifest 中能关联的平台项目和文件信息。
+2. **jar 内元数据**：`fabric.mod.json`、`quilt.mod.json`、`META-INF/mods.toml`、
+   `META-INF/neoforge.mods.toml`。Fabric/Quilt 的 `environment=client` 可作为客户端专用强证据。
+3. **MCMod 运行环境信息**：通过缓存 provider 读取“客户端/服务端安装需求”，不可用时降级。
+4. **本地维护规则**：内置结构化规则和 `data/rules/local_mod_side_rules.json` 用户确认规则。
+
+**交付分层**:
+
+- 第一批实现：结构化本地规则、Fabric/Quilt jar 元数据、决策报告落盘，补齐
+  Xaero's World Map、Tweakerge、Tweakeroo 等规则。
+- 第二批实现：把 Modrinth manifest 下载项与平台项目元数据关联，接入平台端侧字段。
+- 第三批实现：实现 MCMod provider、缓存和不可用降级。
+- 第四批实现：从启动失败日志或用户确认操作生成候选规则，并提供确认后写入本地规则的入口。
+
+**风险与约束**:
+
+- 端侧误判会影响服务端可运行性，因此所有弱证据默认保留，不自动删除。
+- MCMod 只能作为辅助证据，页面结构变化或访问失败不能阻塞生成。
+- 本地自扩展规则必须保留用户确认边界，避免系统偷偷学习出破坏性规则。

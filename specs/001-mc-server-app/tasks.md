@@ -262,3 +262,48 @@ T060 结果报告组件
 2. 上传分析可先输出报告，再加入服务端目录生成。
 3. 启动验证可从“可选验证”逐步变为默认验证。
 4. 清理策略和历史页在产物稳定后加入。
+
+---
+
+## Phase 8：mod 端侧证据链判定增强（P1 增量）
+
+**目标**: 将当前文件名黑名单升级为可解释的证据链判定器，减少客户端专用 mod 被放入
+服务端的情况，同时保留证据不足时的安全默认策略。
+
+**独立测试**: 构造包含 Xaero's World Map、Tweakerge、Tweakeroo、Fabric
+`environment=client`、未知 mod 的 fixture，验证客户端专用 mod 被隔离，未知 mod
+保留，并在报告中看到每个决策的中文依据。
+
+### 测试
+
+- [x] T082 [P] [US1] 为结构化端侧规则创建单元测试 `backend/tests/unit/test_mod_decider.py`
+- [x] T083 [P] [US1] 为 jar 元数据端侧读取创建单元测试 `backend/tests/unit/test_mod_metadata.py`
+- [x] T084 [P] [US1] 为生成服务端时输出 mod 决策报告创建单元测试 `backend/tests/unit/test_server_generator.py`
+- [x] T085 [P] [US1] 为本地用户规则读取和损坏降级创建单元测试 `backend/tests/unit/test_mod_decider.py`
+
+### 第一批实现：本地规则 + jar 元数据 + 报告
+
+- [x] T086 [US1] 将 `backend/app/services/rules/client_mods.json` 升级为结构化规则文件 `backend/app/services/rules/mod_side_rules.json`
+- [x] T087 [US1] 实现结构化 `ModSideDecision`、证据来源和本地规则读取 `backend/app/services/mod_decider.py`
+- [x] T088 [US1] 实现 `fabric.mod.json`、`quilt.mod.json` 和 Forge/NeoForge toml 元数据读取 `backend/app/services/mod_metadata.py`
+- [x] T089 [US1] 在服务端生成流程中基于 jar 元数据和规则判定端侧，并写出 `MOD_DECISIONS.md` `backend/app/services/server_generator.py`
+- [x] T090 [US1] 更新内置规则，覆盖 `xaerosworldmap`、`xaero-world-map`、`tweakerge`、`tweakeroo`、`tweakermore` `backend/app/services/rules/mod_side_rules.json`
+
+### 第二批实现：平台元数据
+
+- [ ] T091 [US1] 扩展 Modrinth manifest 远程文件模型，保留项目标识和可用于查询端侧的元数据 `backend/app/services/archive_analyzer.py`
+- [ ] T092 [US1] 实现 Modrinth 项目端侧 metadata 查询和 fixture 测试 `backend/app/sources/modrinth.py`
+- [ ] T093 [US1] 在生成流程中优先应用平台端侧证据 `backend/app/services/server_generator.py`
+
+### 第三批实现：MCMod 参考源
+
+- [ ] T094 [US1] 设计并实现 MCMod 运行环境 provider 和缓存模型 `backend/app/services/mcmod_provider.py`
+- [ ] T095 [US1] 为 MCMod 页面不可用、未收录和缓存命中创建 fixture 测试 `backend/tests/unit/test_mcmod_provider.py`
+- [ ] T096 [US1] 将 MCMod 证据接入端侧判定器，且不可用时降级为无证据 `backend/app/services/mod_decider.py`
+
+### 第四批实现：本地规则自扩展
+
+- [ ] T097 [US1] 设计候选规则数据结构和本地保存路径 `data/rules/local_mod_side_rule_candidates.json`
+- [ ] T098 [US1] 从启动验证失败日志生成候选规则，不自动启用 `backend/app/services/verification_runner.py`
+- [ ] T099 [US1] 提供确认后写入 `data/rules/local_mod_side_rules.json` 的服务层接口 `backend/app/services/mod_side_rule_store.py`
+- [ ] T100 [US1] 在报告中展示候选规则和确认前风险说明 `backend/app/services/server_generator.py`

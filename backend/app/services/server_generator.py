@@ -10,7 +10,7 @@ import httpx
 
 from app.core.config import get_settings
 from app.services.archive_analyzer import ArchiveAnalysis, ArchiveSecurityError, RemoteModFile
-from app.services.mod_decider import decide_mod_side
+from app.services.mod_decider import ModSideDecision, decide_mod_side_detailed
 from app.services.verification_runner import VerificationResult
 
 
@@ -80,6 +80,8 @@ def build_runnable_server_artifact(
     kept_mods = 0
     disabled_mods = 0
     copied_mod_names: set[str] = set()
+    mod_decisions: list[tuple[str, ModSideDecision]] = []
+    temp_mod_dir = workspace_path / "_mod_decision_tmp"
 
     with zipfile.ZipFile(upload_archive) as archive:
         _assert_safe_archive(archive)
@@ -93,16 +95,14 @@ def build_runnable_server_artifact(
                 continue
 
             if _is_mod_jar(normalized):
-                decision, _, _ = decide_mod_side(normalized.name)
-                target_dir = (
-                    workspace_path / "_disabled_client_mods"
-                    if decision == "disable_client_only"
-                    else workspace_path / "mods"
-                )
-                target = target_dir / normalized.name
-                _extract_member(archive, member, target)
+                temp_target = temp_mod_dir / normalized.name
+                _extract_member(archive, member, temp_target)
+                decision = decide_mod_side_detailed(normalized.name, jar_path=temp_target)
+                target = _target_for_mod_decision(workspace_path, normalized.name, decision)
+                _move_file(temp_target, target)
                 copied_mod_names.add(normalized.name)
-                if decision == "disable_client_only":
+                mod_decisions.append((normalized.name, decision))
+                if decision.decision == "disable_client_only":
                     disabled_mods += 1
                 else:
                     kept_mods += 1
@@ -124,23 +124,24 @@ def build_runnable_server_artifact(
         if file_name in copied_mod_names:
             continue
 
-        decision, _, _ = decide_mod_side(file_name)
-        target_dir = (
-            workspace_path / "_disabled_client_mods"
-            if decision == "disable_client_only"
-            else workspace_path / "mods"
-        )
-        target = target_dir / file_name
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(content)
+        temp_target = temp_mod_dir / file_name
+        temp_target.parent.mkdir(parents=True, exist_ok=True)
+        temp_target.write_bytes(content)
+        decision = decide_mod_side_detailed(file_name, jar_path=temp_target)
+        target = _target_for_mod_decision(workspace_path, file_name, decision)
+        _move_file(temp_target, target)
         copied_mod_names.add(file_name)
+        mod_decisions.append((file_name, decision))
 
-        if decision == "disable_client_only":
+        if decision.decision == "disable_client_only":
             disabled_mods += 1
         else:
             kept_mods += 1
 
+    if temp_mod_dir.exists():
+        shutil.rmtree(temp_mod_dir)
     _write_runtime_files(workspace_path, analysis, kept_mods, disabled_mods)
+    _write_mod_decision_report(workspace_path, mod_decisions)
     _zip_workspace(workspace_path, archive_path)
 
     return GeneratedServerArtifact(
@@ -197,6 +198,50 @@ def _download_one_remote_mod(
     _verify_remote_mod_hash(remote_file, content)
 
     return DownloadedRemoteMod(remote_file=remote_file, content=content, file_name=file_name)
+
+
+def _target_for_mod_decision(
+    workspace_path: Path,
+    file_name: str,
+    decision: ModSideDecision,
+) -> Path:
+    target_dir = (
+        workspace_path / "_disabled_client_mods"
+        if decision.decision == "disable_client_only"
+        else workspace_path / "mods"
+    )
+    return target_dir / file_name
+
+
+def _move_file(source: Path, target: Path) -> None:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if target.exists():
+        target.unlink()
+    shutil.move(str(source), str(target))
+
+
+def _write_mod_decision_report(
+    workspace_path: Path,
+    decisions: list[tuple[str, ModSideDecision]],
+) -> Path:
+    report_path = workspace_path / "MOD_DECISIONS.md"
+    lines = [
+        "# mod 端侧判定报告",
+        "",
+        "| 文件 | 决策 | 置信度 | 证据来源 | 说明 |",
+        "| --- | --- | ---: | --- | --- |",
+    ]
+    if not decisions:
+        lines.append("| 无 | keep_unknown | 0 | unknown | 未发现 mod 文件 |")
+    else:
+        for filename, decision in decisions:
+            lines.append(
+                f"| `{filename}` | `{decision.decision}` | {decision.confidence:.2f} | "
+                f"`{decision.evidence_source}` | {decision.reason} |"
+            )
+    lines.append("")
+    report_path.write_text("\n".join(lines), encoding="utf-8")
+    return report_path
 
 
 def write_verification_report(workspace_path: Path, result: VerificationResult) -> Path:

@@ -1,0 +1,44 @@
+[
+  {
+    "match": ["journeymap"],
+    "decision": "disable_client_only",
+    "confidence": 0.95,
+    "reason": "JourneyMap 是客户端地图与小地图类功能，默认不放入 dedicated server",
+    "source": "builtin_rule"
+  },
+  {
+    "match": ["xaerominimap", "xaero-minimap"],
+    "decision": "disable_client_only",
+    "confidence": 0.95,
+    "reason": "Xaero's Minimap 是客户端小地图功能，默认隔离",
+    "source": "builtin_rule"
+  },
+  {
+    "match": ["xaerosworldmap", "xaero-world-map", "xaero_world_map"],
+    "decision": "disable_client_only",
+    "confidence": 0.95,
+    "reason": "Xaero's World Map 是客户端全屏地图功能，默认隔离",
+    "source": "builtin_rule"
+  },
+  {
+    "match": ["tweakerge"],
+    "decision": "disable_client_only",
+    "confidence": 0.95,
+    "reason": "Tweakerge 是客户端调整工具，服务端无效，默认隔离",
+    "source": "builtin_rule"
+  },
+  {
+    "match": ["tweakeroo", "tweakermore"],
+    "decision": "disable_client_only",
+    "confidence": 0.95,
+    "reason": "Tweakeroo/Tweakermore 是客户端行为调整工具，默认隔离",
+    "source": "builtin_rule"
+  },
+  {
+    "match": ["sodium", "iris", "oculus", "betterf3", "modmenu", "mouse_tweaks", "mouse-tweaks"],
+    "decision": "disable_client_only",
+    "confidence": 0.9,
+    "reason": "命中常见客户端渲染、界面或输入增强规则",
+    "source": "builtin_rule"
+  }
+]

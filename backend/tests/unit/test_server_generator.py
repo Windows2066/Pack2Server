@@ -1,4 +1,5 @@
 import hashlib
+import json
 import threading
 import time
 import zipfile
@@ -49,6 +50,54 @@ def test_build_runnable_server_artifact_creates_scripts_mods_and_archive(tmp_pat
     assert "start.bat" in names
     assert "mods/server-lib.jar" in names
     assert "_disabled_client_mods/journeymap-client.jar" in names
+
+
+def test_build_runnable_server_artifact_writes_mod_decision_report(tmp_path):
+    upload_archive = tmp_path / "pack.mrpack"
+    with zipfile.ZipFile(upload_archive, "w") as archive:
+        archive.writestr(
+            "mods/client-env-mod.jar",
+            _jar_bytes(
+                {
+                    "id": "client-env-mod",
+                    "version": "1.0.0",
+                    "environment": "client",
+                }
+            ),
+        )
+        archive.writestr("mods/unknown-lib.jar", "not a real jar")
+
+    artifact = build_runnable_server_artifact(
+        task_id="task-decisions",
+        upload_archive=upload_archive,
+        workspace_root=tmp_path / "workspaces",
+        artifact_root=tmp_path / "artifacts",
+        analysis=ArchiveAnalysis(
+            pack_name="决策测试包",
+            pack_version="1.0.0",
+            minecraft_version="1.20.1",
+            loader="fabric",
+            mod_files=["mods/client-env-mod.jar", "mods/unknown-lib.jar"],
+        ),
+    )
+
+    report = (artifact.workspace_path / "MOD_DECISIONS.md").read_text(encoding="utf-8")
+
+    assert (artifact.workspace_path / "_disabled_client_mods" / "client-env-mod.jar").exists()
+    assert (artifact.workspace_path / "mods" / "unknown-lib.jar").exists()
+    assert "client-env-mod.jar" in report
+    assert "jar_metadata" in report
+    assert "unknown-lib.jar" in report
+    assert "keep_unknown" in report
+
+
+def _jar_bytes(fabric_metadata: dict) -> bytes:
+    from io import BytesIO
+
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w") as jar:
+        jar.writestr("fabric.mod.json", json.dumps(fabric_metadata))
+    return buffer.getvalue()
 
 
 def test_build_runnable_server_artifact_downloads_modrinth_remote_mods(tmp_path):
