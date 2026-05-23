@@ -13,6 +13,10 @@ class RemoteModFile:
     path: str
     downloads: list[str] = field(default_factory=list)
     hashes: dict[str, str] = field(default_factory=dict)
+    source: str = "direct"
+    project_id: int | None = None
+    file_id: int | None = None
+    required: bool = True
 
 
 @dataclass(frozen=True)
@@ -69,6 +73,7 @@ def analyze_archive(path: Path) -> ArchiveAnalysis:
                 minecraft_version=minecraft.get("version"),
                 loader=loader,
                 mod_files=mod_files,
+                remote_mod_files=_remote_mod_files_from_curseforge(data),
             )
 
         return ArchiveAnalysis(None, None, None, None, mod_files)
@@ -97,3 +102,37 @@ def _remote_mod_files_from_modrinth(data: dict) -> list[RemoteModFile]:
         remote_files.append(RemoteModFile(path=path, downloads=downloads, hashes=hashes))
 
     return remote_files
+
+
+def _remote_mod_files_from_curseforge(data: dict) -> list[RemoteModFile]:
+    remote_files: list[RemoteModFile] = []
+    for item in data.get("files", []):
+        if not isinstance(item, dict):
+            continue
+        if item.get("required") is False:
+            continue
+
+        project_id = _coerce_int(item.get("projectID"))
+        file_id = _coerce_int(item.get("fileID"))
+        if project_id is None or file_id is None:
+            continue
+
+        remote_files.append(
+            RemoteModFile(
+                path=f"mods/{project_id}-{file_id}.jar",
+                source="curseforge",
+                project_id=project_id,
+                file_id=file_id,
+                required=item.get("required", True) is not False,
+            )
+        )
+
+    return remote_files
+
+
+def _coerce_int(value: object) -> int | None:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.isdigit():
+        return int(value)
+    return None

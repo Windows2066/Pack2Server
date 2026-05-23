@@ -80,3 +80,36 @@ def test_reads_modrinth_remote_mod_files(tmp_path):
     assert remote_file.path == "mods/remote-lib.jar"
     assert remote_file.downloads == ["https://example.test/remote-lib.jar"]
     assert remote_file.hashes == {"sha1": "abc123"}
+
+
+def test_reads_curseforge_manifest_remote_mod_files(tmp_path):
+    archive_path = tmp_path / "pack.zip"
+    archive_path.write_bytes(
+        _zip_bytes(
+            {
+                "manifest.json": json.dumps(
+                    {
+                        "name": "curse pack",
+                        "version": "1.0.0",
+                        "minecraft": {
+                            "version": "1.20.1",
+                            "modLoaders": [{"id": "forge-47.2.0", "primary": True}],
+                        },
+                        "files": [
+                            {"projectID": 238222, "fileID": 4613821, "required": True},
+                            {"projectID": 238223, "fileID": 4613822, "required": False},
+                        ],
+                    }
+                )
+            }
+        )
+    )
+
+    result = analyze_archive(archive_path)
+
+    assert len(result.remote_mod_files) == 1
+    remote_file = result.remote_mod_files[0]
+    assert remote_file.source == "curseforge"
+    assert remote_file.project_id == 238222
+    assert remote_file.file_id == 4613821
+    assert remote_file.path == "mods/238222-4613821.jar"

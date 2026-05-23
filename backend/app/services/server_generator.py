@@ -7,6 +7,7 @@ from typing import Callable
 
 import httpx
 
+from app.core.config import get_settings
 from app.services.archive_analyzer import ArchiveAnalysis, ArchiveSecurityError, RemoteModFile
 from app.services.mod_decider import decide_mod_side
 from app.services.verification_runner import VerificationResult
@@ -27,6 +28,12 @@ class GeneratedServerArtifact:
     archive_path: Path
     kept_mods: int
     disabled_mods: int
+
+
+@dataclass(frozen=True)
+class RemoteFetchResult:
+    content: bytes
+    file_name: str | None = None
 
 
 class RemoteModDownloadError(RuntimeError):
@@ -51,7 +58,7 @@ def build_runnable_server_artifact(
     workspace_root: Path,
     artifact_root: Path,
     analysis: ArchiveAnalysis,
-    remote_fetcher: Callable[[RemoteModFile], bytes] | None = None,
+    remote_fetcher: Callable[[RemoteModFile], bytes | RemoteFetchResult] | None = None,
 ) -> GeneratedServerArtifact:
     workspace_path = workspace_root / task_id
     archive_path = artifact_root / f"{task_id}-server.zip"
@@ -102,19 +109,26 @@ def build_runnable_server_artifact(
         if remote_path.name in copied_mod_names:
             continue
 
-        content = fetch_remote(remote_file)
+        fetched = fetch_remote(remote_file)
+        if isinstance(fetched, RemoteFetchResult):
+            content = fetched.content
+            file_name = fetched.file_name or remote_path.name
+        else:
+            content = fetched
+            file_name = remote_path.name
+        _assert_safe_file_name(file_name)
         _verify_remote_mod_hash(remote_file, content)
 
-        decision, _, _ = decide_mod_side(remote_path.name)
+        decision, _, _ = decide_mod_side(file_name)
         target_dir = (
             workspace_path / "_disabled_client_mods"
             if decision == "disable_client_only"
             else workspace_path / "mods"
         )
-        target = target_dir / remote_path.name
+        target = target_dir / file_name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(content)
-        copied_mod_names.add(remote_path.name)
+        copied_mod_names.add(file_name)
 
         if decision == "disable_client_only":
             disabled_mods += 1
@@ -189,7 +203,16 @@ def _assert_safe_remote_mod_path(path: PurePosixPath) -> None:
         raise ArchiveSecurityError("整合包 manifest 包含不安全或不支持的远程 mod 路径")
 
 
-def _fetch_remote_mod_file(remote_file: RemoteModFile) -> bytes:
+def _assert_safe_file_name(file_name: str) -> None:
+    path = PurePosixPath(file_name)
+    if path.is_absolute() or ".." in path.parts or len(path.parts) != 1 or not file_name.lower().endswith(".jar"):
+        raise ArchiveSecurityError("远程 mod 文件名不安全或不是 jar 文件")
+
+
+def _fetch_remote_mod_file(remote_file: RemoteModFile) -> RemoteFetchResult:
+    if remote_file.source == "curseforge":
+        return _fetch_curseforge_mod_file(remote_file)
+
     if not remote_file.downloads:
         raise RemoteModDownloadError(f"{remote_file.path} 缺少下载地址")
 
@@ -198,12 +221,50 @@ def _fetch_remote_mod_file(remote_file: RemoteModFile) -> bytes:
         try:
             response = httpx.get(url, follow_redirects=True, timeout=60.0)
             response.raise_for_status()
-            return response.content
+            return RemoteFetchResult(content=response.content)
         except httpx.HTTPError as exc:
             errors.append(f"{url}: {exc}")
 
     detail = "；".join(errors) if errors else "无可用下载地址"
     raise RemoteModDownloadError(f"无法下载 {remote_file.path}：{detail}")
+
+
+def _fetch_curseforge_mod_file(remote_file: RemoteModFile) -> RemoteFetchResult:
+    settings = get_settings()
+    api_key = settings.curseforge_api_key
+    if not api_key:
+        raise RemoteModDownloadError(
+            f"CurseForge manifest 文件 {remote_file.project_id}/{remote_file.file_id} 需要配置 CURSEFORGE_API_KEY"
+        )
+    if remote_file.project_id is None or remote_file.file_id is None:
+        raise RemoteModDownloadError(f"{remote_file.path} 缺少 CurseForge projectID 或 fileID")
+
+    headers = {"x-api-key": api_key, "Accept": "application/json"}
+    with httpx.Client(base_url="https://api.curseforge.com", timeout=30.0, headers=headers) as client:
+        file_response = client.get(
+            f"/v1/mods/{remote_file.project_id}/files/{remote_file.file_id}"
+        )
+        file_response.raise_for_status()
+        file_info = file_response.json().get("data", {})
+        file_name = file_info.get("fileName") or f"{remote_file.project_id}-{remote_file.file_id}.jar"
+        _assert_safe_file_name(file_name)
+
+        download_url = file_info.get("downloadUrl")
+        if not download_url:
+            url_response = client.get(
+                f"/v1/mods/{remote_file.project_id}/files/{remote_file.file_id}/download-url"
+            )
+            url_response.raise_for_status()
+            download_url = url_response.json().get("data")
+
+    if not isinstance(download_url, str) or not download_url:
+        raise RemoteModDownloadError(
+            f"CurseForge 文件 {remote_file.project_id}/{remote_file.file_id} 未提供可下载地址，可能未获得作者分发授权"
+        )
+
+    response = httpx.get(download_url, follow_redirects=True, timeout=60.0)
+    response.raise_for_status()
+    return RemoteFetchResult(content=response.content, file_name=file_name)
 
 
 def _verify_remote_mod_hash(remote_file: RemoteModFile, content: bytes) -> None:
